@@ -1,1 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Landscaping Work Log Demo</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #0f172a;
+        --card: #1e293b;
+        --accent: #38bdf8;
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+        --border: #334155;
+        --success: #22c55e;
+        --warn: #f97316;
+      }
+      * {
+        box-sizing: border-box;
+        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      body {
+        margin: 0;
+        background: radial-gradient(ellipse at top, rgba(56, 189, 248, 0.22), transparent),
+          radial-gradient(ellipse at bottom, rgba(12, 74, 110, 0.45), #020617);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        padding: clamp(1.5rem, 1.5vw + 1rem, 2.5rem);
+      }
+      h1,
+      h2 {
+        font-weight: 600;
+        margin: 0 0 0.75rem;
+      }
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: clamp(1.5rem, 2vw + 1rem, 3rem);
+      }
+      header p {
+        max-width: 480px;
+        margin: 0;
+        color: var(--muted);
+      }
+      main {
+        display: grid;
+        gap: clamp(1.5rem, 2vw + 1rem, 3rem);
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      }
+      section {
+        background: rgba(15, 23, 42, 0.72);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        border-radius: 18px;
+        padding: clamp(1.5rem, 2vw + 1rem, 2.5rem);
+        box-shadow: 0 40px 90px -40px rgba(15, 23, 42, 0.75);
+      }
+      form {
+        display: grid;
+        gap: 1rem;
+      }
+      label {
+        font-size: 0.95rem;
+        display: grid;
+        gap: 0.35rem;
+      }
+      input,
+      select,
+      textarea {
+        padding: 0.65rem 0.75rem;
+        border-radius: 10px;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        background: rgba(30, 41, 59, 0.8);
+        color: inherit;
+        outline: none;
+        transition: border 0.2s ease, transform 0.2s ease;
+      }
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: rgba(56, 189, 248, 0.55);
+        transform: translateY(-1px);
+      }
+      textarea {
+        min-height: 90px;
+        resize: vertical;
+      }
+      .inline-group {
+        display: grid;
+        gap: 0.65rem;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      }
+      .checkbox-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.4rem 0.75rem;
+      }
+      .checkbox-grid label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.45rem 0.55rem;
+        border-radius: 10px;
+        background: rgba(15, 23, 42, 0.5);
+        border: 1px solid rgba(148, 163, 184, 0.12);
+        font-size: 0.9rem;
+      }
+      button {
+        appearance: none;
+        border: none;
+        border-radius: 12px;
+        padding: 0.75rem 1.25rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .primary {
+        background: linear-gradient(120deg, #38bdf8 0%, #22d3ee 100%);
+        color: #0f172a;
+        box-shadow: 0 18px 32px -18px rgba(56, 189, 248, 0.65);
+      }
+      .primary:hover {
+        transform: translateY(-1px);
+      }
+      .ghost {
+        background: transparent;
+        color: var(--muted);
+        border: 1px dashed rgba(148, 163, 184, 0.32);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+      }
+      thead {
+        color: var(--muted);
+        font-size: 0.8rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 0.65rem 0.5rem;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+        vertical-align: top;
+      }
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        border-radius: 9999px;
+        padding: 0.25rem 0.65rem;
+        font-size: 0.75rem;
+        background: rgba(56, 189, 248, 0.16);
+        color: #38bdf8;
+      }
+      footer {
+        margin-top: 2rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+      footer button {
+        flex: 1 1 160px;
+      }
+      .empty {
+        font-size: 0.9rem;
+        color: var(--muted);
+        margin-top: 1.5rem;
+        text-align: center;
+      }
+      @media (max-width: 760px) {
+        header {
+          align-items: flex-start;
+        }
+        table thead {
+          display: none;
+        }
+        table,
+        tbody,
+        tr,
+        td {
+          display: block;
+          width: 100%;
+        }
+        tr {
+          padding: 0.85rem 0;
+          border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+        }
+        td {
+          padding: 0.45rem 0;
+        }
+        td::before {
+          content: attr(data-label);
+          display: block;
+          font-size: 0.75rem;
+          color: var(--muted);
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          margin-bottom: 0.25rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>Landscaping Work Log Demo</h1>
+        <p>
+          Prototype workflow inspired by the Microsoft Form. Add crews, capture job visits, and instantly
+          download a CSV for billing.
+        </p>
+      </div>
+      <span class="badge">Beta Preview</span>
+    </header>
 
+    <main>
+      <section>
+        <h2>Record New Visit</h2>
+        <form id="workLogForm">
+          <div class="inline-group">
+            <label>
+              Company
+              <select name="company" id="companySelect" required></select>
+            </label>
+            <label>
+              Crew Member
+              <select name="employee" id="employeeSelect" required></select>
+            </label>
+          </div>
+          <div class="inline-group">
+            <label>
+              Visit Date
+              <input type="date" name="date" required />
+            </label>
+            <label>
+              Property
+              <select name="property" id="propertySelect" required></select>
+            </label>
+          </div>
+          <div class="inline-group">
+            <label>
+              On-Site Start
+              <input type="time" name="startTime" required />
+            </label>
+            <label>
+              Departure
+              <input type="time" name="endTime" required />
+            </label>
+            <label>
+              Weather Snapshot
+              <select name="weather">
+                <option value="Clear">Clear</option>
+                <option value="Partly Cloudy">Partly Cloudy</option>
+                <option value="Overcast">Overcast</option>
+                <option value="Light Rain">Light Rain</option>
+                <option value="Heavy Rain">Heavy Rain</option>
+                <option value="Snow">Snow</option>
+              </select>
+            </label>
+          </div>
+          <label>
+            Services Completed
+            <div class="checkbox-grid" id="servicesGrid"></div>
+          </label>
+          <label>
+            Materials / Notes
+            <textarea
+              name="notes"
+              placeholder="Mulch bags: 4 • Fertilizer: 2 lbs • Gate code updated…"
+            ></textarea>
+          </label>
+          <label>
+            Customer Follow-ups
+            <textarea
+              name="followUps"
+              placeholder="e.g. Schedule irrigation inspection, quote seasonal planting"
+            ></textarea>
+          </label>
+          <div class="inline-group">
+            <label>
+              Customer Signature (optional)
+              <input type="text" name="signature" placeholder="Type name if collected" />
+            </label>
+            <label>
+              Internal Status
+              <select name="status">
+                <option value="Completed">Completed</option>
+                <option value="Needs Attention">Needs Attention</option>
+                <option value="Customer Hold">Customer Hold</option>
+              </select>
+            </label>
+          </div>
+          <button class="primary" type="submit">Add Visit to Log</button>
+        </form>
+      </section>
+
+      <section>
+        <h2>Visit Log</h2>
+        <div id="tableContainer"></div>
+        <div class="empty" id="emptyState">No visits logged yet — submit the form to see entries here.</div>
+        <footer>
+          <button class="primary" id="downloadCsv" type="button">Download CSV</button>
+          <button class="ghost" id="clearEntries" type="button">Clear Demo Data</button>
+        </footer>
+      </section>
+    </main>
+
+    <template id="checkboxTemplate">
+      <label>
+        <input type="checkbox" />
+        <span></span>
+      </label>
+    </template>
+
+    <script>
+      const seedData = {
+        companies: [
+          {
+            id: "green-ways",
+            name: "Green Ways Landscaping",
+            employees: [
+              { id: "em-jordan", name: "Jordan Ellis" },
+              { id: "em-sky", name: "Sky Chen" },
+              { id: "em-drew", name: "Drew Patel" }
+            ],
+            properties: [
+              { id: "prop-fairview", name: "Fairview Corporate Campus" },
+              { id: "prop-lakewood", name: "Lakewood HOA - Phase 2" },
+              { id: "prop-summit", name: "Summit Heights Medical" }
+            ]
+          },
+          {
+            id: "evergreen",
+            name: "Evergreen Grounds Co.",
+            employees: [
+              { id: "em-nina", name: "Nina Gomez" },
+              { id: "em-hassan", name: "Hassan Price" }
+            ],
+            properties: [
+              { id: "prop-hillside", name: "Hillside Retail Plaza" },
+              { id: "prop-maple", name: "Maple Ridge Apartments" }
+            ]
+          }
+        ],
+        services: [
+          "Mowing",
+          "String Trimming",
+          "Edging",
+          "Leaf Blowing",
+          "Shrub Pruning",
+          "Bed Maintenance",
+          "Fertilization",
+          "Irrigation Check",
+          "Seasonal Cleanup",
+          "Snow Clearing"
+        ]
+      };
+
+      const servicesGrid = document.getElementById("servicesGrid");
+      const form = document.getElementById("workLogForm");
+      const companySelect = document.getElementById("companySelect");
+      const employeeSelect = document.getElementById("employeeSelect");
+      const propertySelect = document.getElementById("propertySelect");
+      const tableContainer = document.getElementById("tableContainer");
+      const downloadCsvBtn = document.getElementById("downloadCsv");
+      const clearEntriesBtn = document.getElementById("clearEntries");
+      const emptyState = document.getElementById("emptyState");
+      const checkboxTemplate = document.getElementById("checkboxTemplate");
+
+      let entries = loadEntries();
+
+      init();
+      renderTable();
+
+      function init() {
+        populateSelect(companySelect, seedData.companies.map(({ id, name }) => ({ value: id, label: name })));
+        populateServices();
+        companySelect.addEventListener("change", handleCompanyChange);
+        handleCompanyChange();
+        form.addEventListener("submit", handleSubmit);
+        downloadCsvBtn.addEventListener("click", handleDownloadCsv);
+        clearEntriesBtn.addEventListener("click", handleClearEntries);
+      }
+
+      function populateSelect(select, options) {
+        select.innerHTML = "";
+        options.forEach((opt) => {
+          const option = document.createElement("option");
+          option.value = opt.value;
+          option.textContent = opt.label;
+          select.appendChild(option);
+        });
+      }
+
+      function populateServices() {
+        servicesGrid.innerHTML = "";
+        seedData.services.forEach((service) => {
+          const fragment = checkboxTemplate.content.cloneNode(true);
+          const checkbox = fragment.querySelector("input");
+          const labelSpan = fragment.querySelector("span");
+          checkbox.value = service;
+          checkbox.name = "services";
+          labelSpan.textContent = service;
+          servicesGrid.appendChild(fragment);
+        });
+      }
+
+      function handleCompanyChange() {
+        const company = seedData.companies.find((c) => c.id === companySelect.value) || seedData.companies[0];
+        if (!company) return;
+        populateSelect(
+          employeeSelect,
+          company.employees.map(({ id, name }) => ({ value: id, label: name }))
+        );
+        populateSelect(
+          propertySelect,
+          company.properties.map(({ id, name }) => ({ value: id, label: name }))
+        );
+      }
+
+      function handleSubmit(event) {
+        event.preventDefault();
+        const data = new FormData(form);
+        const company = seedData.companies.find((c) => c.id === data.get("company"));
+        const employee = company?.employees.find((e) => e.id === data.get("employee"));
+        const property = company?.properties.find((p) => p.id === data.get("property"));
+        const startTime = data.get("startTime");
+        const endTime = data.get("endTime");
+        const duration = computeDuration(startTime, endTime);
+        const services = [...form.querySelectorAll('input[name="services"]:checked')].map((input) => input.value);
+
+        const entry = {
+          id: crypto.randomUUID(),
+          company: company?.name ?? "",
+          employee: employee?.name ?? "",
+          property: property?.name ?? "",
+          date: data.get("date"),
+          startTime,
+          endTime,
+          duration,
+          weather: data.get("weather"),
+          services,
+          notes: data.get("notes"),
+          followUps: data.get("followUps"),
+          signature: data.get("signature"),
+          status: data.get("status"),
+          createdAt: new Date().toISOString()
+        };
+
+        entries = [entry, ...entries];
+        saveEntries(entries);
+        renderTable();
+        form.reset();
+        handleCompanyChange();
+      }
+
+      function computeDuration(start, end) {
+        if (!start || !end) return "";
+        const [sh, sm] = start.split(":").map(Number);
+        const [eh, em] = end.split(":").map(Number);
+        const minutes = (eh * 60 + em) - (sh * 60 + sm);
+        if (Number.isNaN(minutes) || minutes <= 0) {
+          return "Check times";
+        }
+        const hrs = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        return `${hrs > 0 ? hrs + "h " : ""}${mins > 0 ? mins + "m" : ""}`.trim();
+      }
+
+      function renderTable() {
+        if (!entries.length) {
+          tableContainer.innerHTML = "";
+          emptyState.style.display = "block";
+          return;
+        }
+        emptyState.style.display = "none";
+        const table = document.createElement("table");
+        table.innerHTML = `
+          <thead>
+            <tr>
+              <th>Company</th>
+              <th>Date</th>
+              <th>Property</th>
+              <th>Crew Member</th>
+              <th>Services</th>
+              <th>Duration</th>
+              <th>Status</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${entries
+              .map(
+                (entry) => `
+                  <tr>
+                    <td data-label="Company">${entry.company}</td>
+                    <td data-label="Date">${formatDate(entry.date)}</td>
+                    <td data-label="Property">${entry.property}</td>
+                    <td data-label="Crew">${entry.employee}</td>
+                    <td data-label="Services">${entry.services.join(", ") || "—"}</td>
+                    <td data-label="Duration">${entry.duration || "—"}</td>
+                    <td data-label="Status">${entry.status}</td>
+                    <td data-label="Notes">${escapeHtml(entry.notes) || "—"}</td>
+                  </tr>
+                `
+              )
+              .join("")}
+          </tbody>
+        `;
+        tableContainer.innerHTML = "";
+        tableContainer.appendChild(table);
+      }
+
+      function handleDownloadCsv() {
+        if (!entries.length) return alert("Log something first to generate a CSV.");
+        const headers = [
+          "Visit ID",
+          "Company",
+          "Crew Member",
+          "Property",
+          "Visit Date",
+          "Start Time",
+          "End Time",
+          "Duration",
+          "Weather",
+          "Services",
+          "Notes",
+          "Follow Ups",
+          "Customer Signature",
+          "Status",
+          "Recorded At"
+        ];
+        const rows = entries.map((entry) =>
+          [
+            entry.id,
+            entry.company,
+            entry.employee,
+            entry.property,
+            entry.date,
+            entry.startTime,
+            entry.endTime,
+            entry.duration,
+            entry.weather,
+            entry.services.join("; "),
+            entry.notes,
+            entry.followUps,
+            entry.signature,
+            entry.status,
+            entry.createdAt
+          ].map(csvEscape)
+        );
+        const csvContent = [headers.map(csvEscape), ...rows].map((row) => row.join(",")).join("\n");
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `landscaping-worklog-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      function handleClearEntries() {
+        if (!entries.length) return;
+        const confirmed = confirm("Remove all demo entries? This cannot be undone.");
+        if (!confirmed) return;
+        entries = [];
+        saveEntries(entries);
+        renderTable();
+      }
+
+      function loadEntries() {
+        if (typeof localStorage === "undefined") return [];
+        try {
+          const raw = localStorage.getItem("landscaping-log");
+          return raw ? JSON.parse(raw) : [];
+        } catch (err) {
+          console.warn("Unable to load cached entries:", err);
+          return [];
+        }
+      }
+
+      function saveEntries(newEntries) {
+        if (typeof localStorage === "undefined") return;
+        try {
+          localStorage.setItem("landscaping-log", JSON.stringify(newEntries));
+        } catch (err) {
+          console.warn("Unable to cache entries:", err);
+        }
+      }
+
+      function escapeHtml(str = "") {
+        return str.replace(/[&<>"']/g, (char) => {
+          const map = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#039;"
+          };
+          return map[char] || char;
+        });
+      }
+
+      function formatDate(value) {
+        if (!value) return "—";
+        const date = new Date(value + "T00:00:00");
+        return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+      }
+
+      function csvEscape(value = "") {
+        const str = String(value ?? "");
+        if (/[",\n]/.test(str)) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      }
+    </script>
+  </body>
+</html>
