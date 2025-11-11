@@ -219,6 +219,12 @@
         color: var(--muted);
         border: 1px dashed rgba(148, 163, 184, 0.3);
       }
+      button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+      }
       button.danger {
         background: rgba(248, 113, 113, 0.16);
         color: #fecaca;
@@ -324,6 +330,64 @@
       footer.actions button {
         flex: 1 1 200px;
       }
+      .share-card {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 0.9rem;
+        align-items: center;
+        padding: 1rem 1.1rem;
+        border-radius: 14px;
+        border: 1px solid rgba(56, 189, 248, 0.25);
+        background: rgba(15, 23, 42, 0.45);
+      }
+      .share-card strong {
+        font-size: 0.95rem;
+      }
+      .share-card p {
+        margin: 0.25rem 0 0;
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+      .share-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        align-items: center;
+      }
+      .share-actions button {
+        width: auto;
+      }
+      .share-link {
+        font-family: "JetBrains Mono", "SFMono-Regular", ui-monospace, "Source Code Pro", monospace;
+        font-size: 0.82rem;
+        padding: 0.45rem 0.65rem;
+        border-radius: 10px;
+        background: rgba(15, 23, 42, 0.65);
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        max-width: clamp(220px, 25vw, 320px);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.78rem;
+        padding: 0.25rem 0.6rem;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.16);
+        color: var(--muted);
+      }
+      .tag.published {
+        background: rgba(52, 211, 153, 0.18);
+        color: #34d399;
+      }
+      .tag.draft {
+        background: rgba(248, 113, 113, 0.16);
+        color: #fca5a5;
+      }
       @media (max-width: 820px) {
         body {
           padding: 1.5rem;
@@ -375,6 +439,20 @@
             <select id="formSelect"></select>
           </label>
           <div class="pill" id="formMeta">—</div>
+        </div>
+        <div class="share-card" id="shareCard" hidden>
+          <div>
+            <strong>Share Link</strong>
+            <p>Send this link to customers or embed on your website.</p>
+            <div class="tag" id="publishStatusTag"></div>
+          </div>
+          <div class="share-actions">
+            <span class="share-link" id="shareLinkDisplay">—</span>
+            <button class="ghost" type="button" id="copyShareLink">Copy</button>
+            <button class="ghost" type="button" id="openShareLink">Open</button>
+            <button class="ghost" type="button" id="regenerateShare">New Link</button>
+            <button class="ghost" type="button" id="togglePublish">Publish</button>
+          </div>
         </div>
 
         <div id="fillAlerts"></div>
@@ -453,6 +531,13 @@
       const formMeta = document.getElementById("formMeta");
       const fillAlerts = document.getElementById("fillAlerts");
       const resetFormBtn = document.getElementById("resetForm");
+      const shareCard = document.getElementById("shareCard");
+      const shareLinkDisplay = document.getElementById("shareLinkDisplay");
+      const copyShareLinkBtn = document.getElementById("copyShareLink");
+      const openShareLinkBtn = document.getElementById("openShareLink");
+      const regenerateShareBtn = document.getElementById("regenerateShare");
+      const togglePublishBtn = document.getElementById("togglePublish");
+      const publishStatusTag = document.getElementById("publishStatusTag");
       const builderForm = document.getElementById("builderForm");
       const builderFieldsContainer = document.getElementById("builderFields");
       const builderNameInput = document.getElementById("builderName");
@@ -500,6 +585,10 @@
           showFillAlert("Form reset.", "success");
         });
         downloadCsvBtn.addEventListener("click", downloadCsv);
+        copyShareLinkBtn.addEventListener("click", handleCopyShareLink);
+        openShareLinkBtn.addEventListener("click", handleOpenShareLink);
+        regenerateShareBtn.addEventListener("click", handleRegenerateShare);
+        togglePublishBtn.addEventListener("click", handleTogglePublish);
         addFieldBtn.addEventListener("click", () => addBuilderField("text"));
         addSelectFieldBtn.addEventListener("click", () => addBuilderField("select"));
         addCheckboxFieldBtn.addEventListener("click", () => addBuilderField("checkbox-group"));
@@ -512,7 +601,7 @@
 
       async function loadForms() {
         try {
-          const res = await fetch(`${API_BASE}/forms`);
+          const res = await fetch(`${API_BASE}/forms?includeStats=true`);
           if (!res.ok) throw new Error("Failed to fetch forms");
           const body = await res.json();
           state.forms = body.data ?? [];
@@ -579,7 +668,12 @@
           formSelectSubmissions.value = state.activeFormId;
           const form = getActiveForm();
           if (form) {
-            formMeta.textContent = `v${form.version} • ${new Date(form.updatedAt).toLocaleString()}`;
+            const statusLabel = form.isPublished ? "Published" : "Draft";
+            const submissionsLabel =
+              typeof form.submissionCount === "number" ? ` • ${form.submissionCount} submissions` : "";
+            formMeta.textContent = `v${form.version} • ${statusLabel} • Updated ${new Date(
+              form.updatedAt
+            ).toLocaleString()}${submissionsLabel}`;
           } else {
             formMeta.textContent = "—";
           }
@@ -592,6 +686,7 @@
         dynamicForm.innerHTML = "";
         if (!form) {
           dynamicForm.innerHTML = `<div class="empty-state">No form selected.</div>`;
+          updateSharePanel(null);
           return;
         }
         state.dependencyMap = buildDependencyMap(form);
@@ -602,6 +697,7 @@
             setFieldValue(field, field.defaultValue);
           }
         });
+        updateSharePanel(form);
       }
 
       function createFieldCard(field, form) {
@@ -975,6 +1071,126 @@
           return;
         }
         window.location.href = `${API_BASE}/forms/${form.id}/export.csv`;
+      }
+
+      function updateSharePanel(form) {
+        if (!form) {
+          shareCard.hidden = true;
+          publishStatusTag.textContent = "";
+          publishStatusTag.classList.remove("published", "draft");
+          return;
+        }
+        shareCard.hidden = false;
+        const link = form.shareUrl || "";
+        shareLinkDisplay.textContent = link || "—";
+        shareLinkDisplay.title = link;
+        shareLinkDisplay.dataset.url = link;
+        const isPublished = Boolean(form.isPublished);
+        publishStatusTag.textContent = isPublished ? "Published" : "Draft";
+        publishStatusTag.classList.toggle("published", isPublished);
+        publishStatusTag.classList.toggle("draft", !isPublished);
+        togglePublishBtn.textContent = isPublished ? "Unpublish" : "Publish";
+        copyShareLinkBtn.disabled = !isPublished || !link;
+        openShareLinkBtn.disabled = !isPublished || !link;
+        regenerateShareBtn.disabled = false;
+      }
+
+      async function handleCopyShareLink() {
+        const form = getActiveForm();
+        if (!form) return;
+        if (!form.isPublished) {
+          showFillAlert("Publish the form before sharing.", "error");
+          return;
+        }
+        const link = form.shareUrl;
+        if (!link) {
+          showFillAlert("Share link unavailable.", "error");
+          return;
+        }
+        try {
+          await navigator.clipboard.writeText(link);
+          showFillAlert("Share link copied to clipboard.", "success");
+        } catch (error) {
+          console.error(error);
+          showFillAlert("Unable to copy link.", "error");
+        }
+      }
+
+      function handleOpenShareLink() {
+        const form = getActiveForm();
+        if (!form || !form.isPublished || !form.shareUrl) return;
+        window.open(form.shareUrl, "_blank", "noopener");
+      }
+
+      async function handleRegenerateShare() {
+        const form = getActiveForm();
+        if (!form) return;
+        const confirmed = confirm(
+          "Generate a new link? The previous URL will stop working immediately."
+        );
+        if (!confirmed) return;
+        try {
+          const res = await fetch(`${API_BASE}/forms/${form.id}/share`, { method: "POST" });
+          if (!res.ok) {
+            throw new Error("Failed to regenerate share link");
+          }
+          const updated = await fetchFormById(form.id);
+          updateFormInState(updated);
+          renderFormSelects();
+          updateSharePanel(updated);
+          showFillAlert("Share link refreshed.", "success");
+        } catch (error) {
+          console.error(error);
+          showFillAlert(error.message ?? "Unable to regenerate share link.", "error");
+        }
+      }
+
+      async function handleTogglePublish() {
+        const form = getActiveForm();
+        if (!form) return;
+        const targetState = !form.isPublished;
+        try {
+          const res = await fetch(`${API_BASE}/forms/${form.id}/publish`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ isPublished: targetState })
+          });
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body.error ?? "Failed to update publish status");
+          }
+          const response = await res.json();
+          const updated = response.data;
+          updateFormInState(updated);
+          renderFormSelects();
+          updateSharePanel(updated);
+          showFillAlert(
+            targetState ? "Form published. Share link is live." : "Form unpublished.",
+            "success"
+          );
+        } catch (error) {
+          console.error(error);
+          showFillAlert(error.message ?? "Unable to update publish status.", "error");
+        }
+      }
+
+      async function fetchFormById(formId) {
+        const res = await fetch(`${API_BASE}/forms/${formId}`);
+        if (!res.ok) {
+          throw new Error("Unable to refresh form details");
+        }
+        const body = await res.json();
+        return body.data;
+      }
+
+      function updateFormInState(updatedForm) {
+        if (!updatedForm) return;
+        const index = state.forms.findIndex((form) => form.id === updatedForm.id);
+        if (index >= 0) {
+          state.forms[index] = updatedForm;
+        } else {
+          state.forms.push(updatedForm);
+        }
       }
 
       /* Builder */
