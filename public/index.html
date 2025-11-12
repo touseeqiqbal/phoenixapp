@@ -401,73 +401,95 @@
       }
       .workspace-hero {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 1.1rem;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1.35rem;
       }
       .solution-card {
-        display: grid;
-        gap: 0.65rem;
-        padding: 1.15rem 1.2rem;
-        border-radius: 18px;
-        border: 1px solid rgba(148, 163, 184, 0.14);
-        background: var(--surface-soft);
-        backdrop-filter: blur(16px);
+        --card-accent: rgba(56, 189, 248, 0.26);
+        --icon-bg: rgba(56, 189, 248, 0.28);
         position: relative;
-        overflow: hidden;
+        display: flex;
+        align-items: flex-start;
+        gap: 1.15rem;
+        padding: 1.3rem 1.45rem;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        background: var(--surface-soft);
         box-shadow: 0 32px 60px -48px rgba(5, 10, 30, 0.65);
+        cursor: pointer;
+        user-select: none;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border 0.18s ease;
       }
       .solution-card::after {
         content: "";
         position: absolute;
         inset: 0;
-        background: radial-gradient(circle at top right, rgba(56, 189, 248, 0.28), transparent 55%);
-        opacity: 0.6;
+        background: radial-gradient(circle at top right, var(--card-accent), transparent 60%);
+        opacity: 0.65;
         pointer-events: none;
-      }
-      .solution-card:nth-child(2)::after {
-        background: radial-gradient(circle at top right, rgba(168, 85, 247, 0.28), transparent 55%);
-      }
-      .solution-card:nth-child(3)::after {
-        background: radial-gradient(circle at top right, rgba(14, 165, 233, 0.28), transparent 55%);
-      }
-      .solution-card:nth-child(4)::after {
-        background: radial-gradient(circle at top right, rgba(52, 211, 153, 0.28), transparent 55%);
       }
       .solution-card > * {
         position: relative;
         z-index: 1;
       }
+      .solution-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(148, 163, 184, 0.32);
+        box-shadow: 0 42px 80px -48px rgba(5, 10, 30, 0.75);
+      }
+      .solution-card:focus-visible {
+        outline: none;
+        box-shadow:
+          0 0 0 2px var(--accent),
+          0 0 0 5px rgba(56, 189, 248, 0.35),
+          0 32px 60px -48px rgba(5, 10, 30, 0.75);
+      }
+      .solution-card[data-theme="builder"] {
+        --card-accent: rgba(168, 85, 247, 0.28);
+        --icon-bg: rgba(168, 85, 247, 0.32);
+      }
+      .solution-card[data-theme="submissions"] {
+        --card-accent: rgba(52, 211, 153, 0.26);
+        --icon-bg: rgba(52, 211, 153, 0.3);
+      }
+      .solution-card[data-theme="workflow"] {
+        --card-accent: rgba(251, 191, 36, 0.28);
+        --icon-bg: rgba(251, 191, 36, 0.32);
+      }
       .solution-icon {
-        width: 42px;
-        height: 42px;
-        border-radius: 12px;
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         font-weight: 600;
-        font-size: 0.95rem;
-        color: var(--text);
-        background: rgba(56, 189, 248, 0.24);
-      }
-      .solution-card:nth-child(2) .solution-icon {
-        background: rgba(168, 85, 247, 0.24);
-      }
-      .solution-card:nth-child(3) .solution-icon {
-        background: rgba(14, 165, 233, 0.24);
-      }
-      .solution-card:nth-child(4) .solution-icon {
-        background: rgba(52, 211, 153, 0.24);
-      }
-      .solution-card h3 {
-        margin: 0;
         font-size: 1.05rem;
+        color: var(--text);
+        background: var(--icon-bg);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      }
+      .solution-copy {
+        display: grid;
+        gap: 0.35rem;
+      }
+      .solution-copy h3 {
+        margin: 0;
+        font-size: 1.08rem;
         font-weight: 600;
       }
-      .solution-card p {
+      .solution-copy p {
         margin: 0;
         color: var(--muted-strong);
         font-size: 0.9rem;
         line-height: 1.45;
+      }
+      .solution-cta {
+        margin-top: 0.2rem;
+        font-size: 0.78rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(226, 232, 240, 0.75);
       }
 
       section.view {
@@ -1255,26 +1277,66 @@
           </div>
         </div>
         <div class="workspace-hero">
-          <article class="solution-card">
-            <span class="solution-icon">F</span>
-            <h3>Form</h3>
-            <p>Create forms with logic, payments, and automation.</p>
-          </article>
-          <article class="solution-card">
-            <span class="solution-icon">W</span>
-            <h3>Workflow</h3>
-            <p>Easily automate workflows and streamline approvals.</p>
-          </article>
-          <article class="solution-card">
-            <span class="solution-icon">T</span>
-            <h3>Table</h3>
-            <p>Sync, manage, and collaborate on data in one place.</p>
-          </article>
-          <article class="solution-card">
-            <span class="solution-icon">R</span>
-            <h3>Report</h3>
-            <p>Generate reports from your online form data.</p>
-          </article>
+            <article
+              class="solution-card"
+              data-hero-target="fill"
+              data-theme="fill"
+              role="button"
+              tabindex="0"
+              aria-label="Open Fill Form"
+            >
+              <div class="solution-icon" aria-hidden="true">F</div>
+              <div class="solution-copy">
+                <h3>Fill Form</h3>
+                <p>Log crew visits in order, attach photos, and keep billing notes tight.</p>
+                <span class="solution-cta">Open Fill Form</span>
+              </div>
+            </article>
+            <article
+              class="solution-card"
+              data-hero-target="builder"
+              data-theme="builder"
+              role="button"
+              tabindex="0"
+              aria-label="Open Form Builder"
+            >
+              <div class="solution-icon" aria-hidden="true">B</div>
+              <div class="solution-copy">
+                <h3>Form Builder</h3>
+                <p>Create logic-ready templates, share polished links, and reuse across teams.</p>
+                <span class="solution-cta">Design a Form</span>
+              </div>
+            </article>
+            <article
+              class="solution-card"
+              data-hero-target="submissions"
+              data-theme="submissions"
+              role="button"
+              tabindex="0"
+              aria-label="View submissions table"
+            >
+              <div class="solution-icon" aria-hidden="true">T</div>
+              <div class="solution-copy">
+                <h3>Submissions Table</h3>
+                <p>Review field logs, flag issues, and export CSVs for billing in minutes.</p>
+                <span class="solution-cta">Open Submissions</span>
+              </div>
+            </article>
+            <article
+              class="solution-card"
+              data-hero-target="workflow"
+              data-theme="workflow"
+              role="button"
+              tabindex="0"
+              aria-label="Reports & automations coming soon"
+            >
+              <div class="solution-icon" aria-hidden="true">R</div>
+              <div class="solution-copy">
+                <h3>Reports & Automations</h3>
+                <p>Schedule client-ready reports and workflow approvals — coming soon.</p>
+                <span class="solution-cta">View roadmap</span>
+              </div>
+            </article>
         </div>
         <div class="workspace-actions">
           <button class="primary" type="button" id="quickNewForm">+ New Form</button>
@@ -1679,6 +1741,7 @@ const shareVisibilityButtons = shareVisibilityControl
 const fillHelpBtn = document.getElementById("fillHelpBtn");
 const fieldHelpOverlay = document.getElementById("fieldHelpOverlay");
 const fieldHelpCloseBtn = document.getElementById("fieldHelpCloseBtn");
+const heroCards = document.querySelectorAll(".solution-card[data-hero-target]");
 
       const FIELD_LIBRARY = [
         {
@@ -1885,6 +1948,15 @@ const fieldHelpCloseBtn = document.getElementById("fieldHelpCloseBtn");
           fieldHelpOverlay?.addEventListener("click", (event) => {
             if (event.target === fieldHelpOverlay) closeFieldHelp();
           });
+          heroCards.forEach((card) => {
+            card.addEventListener("click", () => handleHeroCard(card.dataset.heroTarget));
+            card.addEventListener("keydown", (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                handleHeroCard(card.dataset.heroTarget);
+              }
+            });
+          });
       }
 
       function startNewFormFlow() {
@@ -1901,6 +1973,31 @@ const fieldHelpCloseBtn = document.getElementById("fieldHelpCloseBtn");
         );
         window.location.href = `mailto:?subject=${subject}&body=${body}`;
       }
+
+        function handleHeroCard(target) {
+          switch (target) {
+            case "fill":
+              setView("fill");
+              dynamicForm.scrollIntoView({ behavior: "smooth", block: "start" });
+              break;
+            case "builder":
+              setView("builder");
+              showBuilderAlert("Drag fields from the palette to shape your form template.", "success");
+              break;
+            case "submissions":
+              setView("submissions");
+              break;
+            case "workflow":
+              setView("builder");
+              showBuilderAlert(
+                "Reports & automations are on the roadmap. For now, export submissions or share requests.",
+                "success"
+              );
+              break;
+            default:
+              break;
+          }
+        }
 
         function openFieldHelp() {
           if (!fieldHelpOverlay) return;
