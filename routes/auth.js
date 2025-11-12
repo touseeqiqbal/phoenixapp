@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const store = require("../data/store");
 const { authRequired, issueAuthToken } = require("../middleware/auth");
+const { getFirebaseAuth } = require("../utils/firebaseAdmin");
 
 const router = express.Router();
 
@@ -87,6 +88,60 @@ router.post("/login", async (req, res) => {
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ error: "Unable to login" });
+  }
+});
+
+router.post("/firebase", async (req, res) => {
+  const { idToken } = req.body ?? {};
+  if (!idToken) {
+    return res.status(400).json({ error: "Firebase ID token is required" });
+  }
+  try {
+    const firebaseAuth = getFirebaseAuth();
+    const decoded = await firebaseAuth.verifyIdToken(idToken);
+    const email = decoded.email;
+    if (!email) {
+      return res.status(400).json({ error: "Google account email is required" });
+    }
+    let user = store.getUserByEmail(email);
+    let workspace;
+    if (!user) {
+      const displayName = decoded.name || decoded.email?.split("@")[0] || "Google User";
+      workspace = store.createWorkspace({
+        name: `${displayName}'s Workspace`
+      });
+      user = store.createUser({
+        name: displayName,
+        email,
+        passwordHash: "",
+        role: "owner",
+        workspaceId: workspace.id
+      });
+      workspace = store.updateWorkspace(workspace.id, { ownerId: user.id });
+    } else {
+      workspace = store.getWorkspace(user.workspaceId);
+      if (!workspace) {
+        workspace = store.createWorkspace({
+          name: `${user.name || "Workspace"}`
+        });
+        user = store.updateUser(user.id, { workspaceId: workspace.id });
+      }
+    }
+    const pkg = workspace ? store.getPackage(workspace.packageId) : null;
+    const token = issueAuthToken(user);
+    setAuthCookie(res, token);
+    res.json({
+      data: {
+        token,
+        user: omitSensitiveUser(user),
+        workspace,
+        package: pkg
+      }
+    });
+  } catch (error) {
+    console.error("Firebase login error:", error);
+    const status = error.code === "auth/argument-error" ? 400 : 401;
+    res.status(status).json({ error: "Unable to verify Google login" });
   }
 });
 

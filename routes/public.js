@@ -13,6 +13,7 @@ function sanitizeForm(form) {
     workspaceId,
     slug,
     isPublished: form.isPublished,
+    visibility: form.visibility,
     settings,
     fields
   };
@@ -34,7 +35,7 @@ function validateRequiredFields(form, payload) {
 
 router.get("/forms/:shareKey", (req, res) => {
   const form = store.getFormByShareKey(req.params.shareKey);
-  if (!form || !form.isPublished) {
+  if (!form || !form.isPublished || form.visibility === "private") {
     return res.status(404).json({ error: "Form not found or not published" });
   }
   const workspace = store.getWorkspace(form.workspaceId);
@@ -54,7 +55,7 @@ router.get("/forms/:shareKey", (req, res) => {
 
 router.post("/forms/:shareKey/submissions", (req, res) => {
   const form = store.getFormByShareKey(req.params.shareKey);
-  if (!form || !form.isPublished) {
+  if (!form || !form.isPublished || form.visibility === "private") {
     return res.status(404).json({ error: "Form not found or not published" });
   }
   const payload = req.body ?? {};

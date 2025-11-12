@@ -127,6 +127,7 @@ const defaultData = {
       version: 1,
       isPublished: true,
       shareKey: null,
+    visibility: "public",
       fields: [
         {
           id: "company",
@@ -370,26 +371,30 @@ class Store {
     }
 
     const existingKeys = new Set(this.data.forms.map((form) => form.shareKey).filter(Boolean));
-    this.data.forms = this.data.forms.map((form) => {
-      const normalized = {
-        id: form.id ?? randomId("form"),
-        workspaceId: form.workspaceId ?? this.data.workspaces[0]?.id ?? "default-workspace",
-        name: form.name ?? "Untitled Form",
-        slug: form.slug ?? slugify(form.name ?? form.id),
-        description: form.description ?? "",
-        version: form.version ?? 1,
-        isPublished: form.isPublished ?? false,
-        shareKey: form.shareKey ?? uniqueShareKey(existingKeys),
-        fields: Array.isArray(form.fields) ? form.fields : [],
+      this.data.forms = this.data.forms.map((form) => {
+        const normalized = {
+          id: form.id ?? randomId("form"),
+          workspaceId: form.workspaceId ?? this.data.workspaces[0]?.id ?? "default-workspace",
+          name: form.name ?? "Untitled Form",
+          slug: form.slug ?? slugify(form.name ?? form.id),
+          description: form.description ?? "",
+          version: form.version ?? 1,
+          isPublished: form.isPublished ?? false,
+          visibility: form.visibility ?? (form.isPublished ? "public" : "private"),
+          shareKey: form.shareKey ?? uniqueShareKey(existingKeys),
+          fields: Array.isArray(form.fields) ? form.fields : [],
           settings: mergeSettings(form.settings),
-        createdAt: form.createdAt ?? nowIso(),
-        updatedAt: form.updatedAt ?? nowIso()
-      };
-      if (!existingKeys.has(normalized.shareKey)) {
-        existingKeys.add(normalized.shareKey);
-      }
-      return normalized;
-    });
+          createdAt: form.createdAt ?? nowIso(),
+          updatedAt: form.updatedAt ?? nowIso()
+        };
+        if (!existingKeys.has(normalized.shareKey)) {
+          existingKeys.add(normalized.shareKey);
+        }
+        if (form.visibility !== normalized.visibility) {
+          mutated = true;
+        }
+        return normalized;
+      });
 
     if (this.data.forms.length === 0) {
       const seedForm = deepClone(defaultData.forms[0]);
@@ -517,7 +522,8 @@ class Store {
       slug: slugify(payload.slug ?? payload.name),
       description: payload.description ?? "",
       version: payload.version ?? 1,
-      isPublished: payload.isPublished ?? false,
+        isPublished: payload.isPublished ?? false,
+        visibility: payload.visibility === "private" ? "private" : "public",
       shareKey: uniqueShareKey(this.data.forms.map((item) => item.shareKey)),
       fields: Array.isArray(payload.fields) ? payload.fields : [],
         settings: mergeSettings(payload.settings),
@@ -536,10 +542,17 @@ class Store {
       const nextSettings = hasSettingsUpdate
         ? mergeSettings({ ...form.settings, ...(updates.settings ?? {}) })
         : mergeSettings(form.settings);
-    const next = {
+      const nextVisibility =
+        Object.prototype.hasOwnProperty.call(updates, "visibility")
+          ? updates.visibility === "private"
+            ? "private"
+            : "public"
+          : form.visibility ?? "public";
+      const next = {
       ...form,
       ...updates,
         settings: nextSettings,
+        visibility: nextVisibility,
       slug: updates.slug ? slugify(updates.slug) : form.slug,
       updatedAt: nowIso(),
       version: (form.version ?? 1) + 1

@@ -22,6 +22,7 @@ function toFormResponse(form, req, options = {}) {
     description: form.description,
     version: form.version,
     isPublished: form.isPublished,
+    visibility: form.visibility,
     fields: form.fields,
     settings: form.settings,
     shareKey: form.shareKey,
@@ -53,7 +54,7 @@ router.get("/", (req, res) => {
 });
 
 router.post("/", (req, res) => {
-  const { name, description, fields, settings, isPublished } = req.body ?? {};
+  const { name, description, fields, settings, isPublished, visibility } = req.body ?? {};
   if (!name) {
     return res.status(400).json({ error: "Form name is required" });
   }
@@ -67,7 +68,8 @@ router.post("/", (req, res) => {
       fields,
       settings,
       workspaceId: req.workspace.id,
-      isPublished
+      isPublished,
+      visibility
     });
     res.status(201).json({ data: toFormResponse(form, req) });
   } catch (error) {
@@ -113,6 +115,9 @@ router.post("/:id/share", (req, res) => {
   const form = store.getForm(req.params.id);
   if (!ensureWorkspaceAccess(req, res, form)) {
     return;
+  }
+  if (form.visibility === "private") {
+    return res.status(400).json({ error: "Private forms cannot generate share links" });
   }
   const shareKey = store.regenerateShareKey(form.id);
   const updated = store.getForm(form.id);

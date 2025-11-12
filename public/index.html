@@ -13,19 +13,21 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js" integrity="sha256-u77gjomWSPr0tm56sZyxwx9R0YoiGOhGURGdKO3/ZNg=" crossorigin="anonymous"></script>
     <style>
       :root {
-        color-scheme: dark;
-        --bg: #040820;
-        --surface: rgba(12, 18, 36, 0.92);
-        --surface-soft: rgba(15, 24, 44, 0.72);
-        --surface-strong: rgba(27, 38, 67, 0.95);
-        --border: rgba(148, 163, 184, 0.18);
+        color-scheme: light dark;
+        --bg: #0b132b;
+        --bg-alt: #111d3a;
+        --surface: rgba(19, 30, 58, 0.92);
+        --surface-soft: rgba(24, 38, 72, 0.7);
+        --surface-strong: rgba(30, 46, 84, 0.95);
+        --surface-glass: rgba(255, 255, 255, 0.04);
+        --border: rgba(148, 163, 184, 0.14);
         --border-strong: rgba(148, 163, 184, 0.32);
         --accent: #38bdf8;
         --accent-alt: #a855f7;
         --accent-strong: rgba(56, 189, 248, 0.65);
-        --muted: #94a3b8;
-        --muted-strong: rgba(148, 163, 184, 0.9);
-        --text: #f1f5f9;
+        --muted: rgba(203, 213, 225, 0.72);
+        --muted-strong: rgba(226, 232, 240, 0.88);
+        --text: #f8fbff;
         --danger: #f87171;
         --success: #34d399;
         --warning: #fbbf24;
@@ -39,9 +41,10 @@
         min-height: 100vh;
         color: var(--text);
         background:
-          radial-gradient(circle at 18% -10%, rgba(56, 189, 248, 0.18), transparent 52%),
-          radial-gradient(circle at 82% 0%, rgba(168, 85, 247, 0.16), transparent 55%),
-          linear-gradient(130deg, #030712 0%, #050820 65%, #060a26 100%);
+          radial-gradient(circle at 15% -20%, rgba(56, 189, 248, 0.26), transparent 52%),
+          radial-gradient(circle at 80% 0%, rgba(120, 90, 255, 0.22), transparent 55%),
+          radial-gradient(ellipse at bottom, rgba(14, 165, 233, 0.2), transparent 60%),
+          linear-gradient(160deg, var(--bg) 0%, var(--bg-alt) 100%);
       }
       a {
         color: inherit;
@@ -93,13 +96,14 @@
         position: sticky;
         top: 0;
         height: 100vh;
-        background: rgba(9, 13, 33, 0.84);
+        background: var(--surface-strong);
         backdrop-filter: blur(18px);
-        border-right: 1px solid rgba(148, 163, 184, 0.12);
+        border-right: 1px solid var(--border);
         padding: 2rem 1.75rem;
         display: flex;
         flex-direction: column;
         gap: 2.5rem;
+        box-shadow: 0 40px 120px -60px rgba(8, 12, 28, 0.85);
       }
       .sidebar-logo {
         display: flex;
@@ -165,6 +169,8 @@
         flex-direction: column;
         gap: 1.75rem;
         padding: 2rem 2.5rem 2.5rem;
+        max-width: 1440px;
+        margin: 0 auto;
       }
       .workspace-header {
         display: flex;
@@ -246,6 +252,10 @@
         background: rgba(148, 163, 184, 0.16);
         color: var(--muted);
       }
+        .tag.soft {
+          background: rgba(56, 189, 248, 0.18);
+          color: var(--text);
+        }
       .pill {
         display: inline-flex;
         align-items: center;
@@ -336,6 +346,42 @@
       .settings-section label.disabled textarea {
         cursor: not-allowed;
       }
+      .segmented-control {
+        display: inline-flex;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: rgba(10, 18, 34, 0.7);
+        overflow: hidden;
+      }
+      .segmented-control button {
+        all: unset;
+        padding: 0.4rem 1.1rem;
+        font-size: 0.85rem;
+        cursor: pointer;
+        color: rgba(226, 232, 240, 0.7);
+        transition: background 0.18s ease, color 0.18s ease;
+      }
+      .segmented-control button.active {
+        background: rgba(56, 189, 248, 0.24);
+        color: var(--text);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      }
+      .segmented-control button + button {
+        border-left: 1px solid rgba(148, 163, 184, 0.18);
+      }
+      .preview-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.5rem;
+        border-radius: 999px;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.78rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: rgba(226, 232, 240, 0.76);
+        background: rgba(56, 189, 248, 0.16);
+      }
       .toggle-row {
         display: inline-flex;
         align-items: center;
@@ -425,8 +471,8 @@
       section.view {
         display: none;
         border-radius: 22px;
-        border: 1px solid rgba(148, 163, 184, 0.15);
-        background: rgba(14, 22, 38, 0.88);
+        border: 1px solid var(--border);
+        background: var(--surface);
         backdrop-filter: blur(26px);
         padding: 1.75rem;
         box-shadow: 0 48px 96px -64px rgba(9, 13, 33, 0.9);
@@ -454,9 +500,9 @@
       }
 
       .card {
-        background: rgba(15, 23, 42, 0.88);
+          background: var(--surface-soft);
         border-radius: 18px;
-        border: 1px solid rgba(148, 163, 184, 0.12);
+          border: 1px solid var(--border);
         padding: 1.25rem;
         display: grid;
         gap: 1rem;
@@ -573,9 +619,18 @@
         justify-content: space-between;
         align-items: center;
         border-radius: 16px;
-        border: 1px dashed rgba(56, 189, 248, 0.28);
+        border: 1px dashed var(--accent-strong);
         padding: 1rem 1.25rem;
-        background: rgba(10, 16, 32, 0.6);
+        background: var(--surface);
+        box-shadow: inset 0 0 0 1px var(--surface-glass);
+      }
+      .share-visibility {
+        display: grid;
+        gap: 0.45rem;
+        margin-top: 0.75rem;
+      }
+      .share-visibility .segmented-control {
+        width: fit-content;
       }
       .share-link {
         font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, "Source Code Pro", monospace;
@@ -621,14 +676,17 @@
         grid-template-columns: minmax(0, 2fr) minmax(0, 1.5fr) minmax(0, 1.4fr);
         gap: 1.5rem;
       }
-      .panel {
-        background: rgba(15, 23, 42, 0.9);
-        border-radius: 18px;
-        border: 1px solid rgba(148, 163, 184, 0.12);
-        padding: 1.25rem;
-        display: grid;
-        gap: 1rem;
-      }
+        .panel {
+          background: var(--surface);
+          border-radius: 20px;
+          border: 1px solid var(--border);
+          padding: 1.25rem;
+          display: grid;
+          gap: 1rem;
+          box-shadow:
+            0 30px 50px -40px rgba(8, 12, 28, 0.8),
+            inset 0 0 0 1px var(--surface-glass);
+        }
       .panel-header--split {
         align-items: flex-start;
       }
@@ -982,6 +1040,53 @@
         font-size: 0.85rem;
         color: var(--muted);
       }
+        .federated-divider {
+          display: grid;
+          grid-template-columns: 1fr auto 1fr;
+          align-items: center;
+          gap: 0.5rem;
+          color: rgba(148, 163, 184, 0.6);
+          font-size: 0.8rem;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+        }
+        .federated-divider::before,
+        .federated-divider::after {
+          content: "";
+          height: 1px;
+          background: rgba(148, 163, 184, 0.18);
+        }
+        .google-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.55rem;
+          border-radius: 14px;
+          padding: 0.75rem 1rem;
+          background: rgba(15, 23, 42, 0.9);
+          border: 1px solid rgba(148, 163, 184, 0.26);
+          color: var(--text);
+          font-weight: 600;
+          cursor: pointer;
+          transition: transform 0.18s ease, border 0.18s ease, background 0.18s ease;
+        }
+        .google-btn:hover {
+          transform: translateY(-1px);
+          border-color: rgba(148, 163, 184, 0.45);
+        }
+        .google-btn .icon {
+          width: 20px;
+          height: 20px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          background: #fff;
+        }
+        .google-btn .label {
+          display: inline-flex;
+          align-items: center;
+        }
 
       @media (max-width: 1080px) {
         .app-shell {
@@ -1034,6 +1139,15 @@
         }
       }
     </style>
+      <script>
+        window.__FIREBASE_CONFIG =
+          window.__FIREBASE_CONFIG || {
+            apiKey: "YOUR_FIREBASE_API_KEY",
+            authDomain: "YOUR_FIREBASE_AUTH_DOMAIN",
+            projectId: "YOUR_FIREBASE_PROJECT_ID",
+            appId: "YOUR_FIREBASE_APP_ID"
+          };
+      </script>
   </head>
   <body>
     <div class="app-shell">
@@ -1145,8 +1259,16 @@
                     <p class="panel-subtitle">
                       Publish the template to collect responses on phones or embed it into your client portal.
                     </p>
-                    <div class="tag" id="publishStatusTag"></div>
+                      <div class="tag" id="publishStatusTag"></div>
+                      <div class="tag soft" id="visibilityTag"></div>
                       <p class="panel-subtitle" id="notificationSummary"></p>
+                      <div class="share-visibility">
+                        <span class="input-hint">Form visibility</span>
+                        <div class="segmented-control" id="shareVisibilityControl">
+                          <button type="button" data-share-visibility="public">Public</button>
+                          <button type="button" data-share-visibility="private">Private</button>
+                        </div>
+                      </div>
                   </div>
                   <div class="share-actions">
                     <span class="share-link" id="shareLinkDisplay">—</span>
@@ -1233,6 +1355,14 @@
                         Message
                         <textarea id="builderNotifyMessage" rows="3" placeholder="Add an optional message. Tokens: {{formName}}, {{submissionId}}."></textarea>
                       </label>
+                    </fieldset>
+                    <fieldset class="settings-section">
+                      <legend>Access</legend>
+                      <div class="segmented-control" id="visibilityControl">
+                        <button type="button" data-visibility="public" class="active">Public</button>
+                        <button type="button" data-visibility="private">Private</button>
+                      </div>
+                      <span class="input-hint">Public forms shareable via link. Private forms stay inside your workspace.</span>
                     </fieldset>
                   </div>
                 <div class="controls-row">
@@ -1375,6 +1505,14 @@
             <input type="password" name="password" placeholder="••••••••" required minlength="6" />
           </label>
           <button class="primary" type="submit">Continue</button>
+            <div class="federated-divider"><span>or</span></div>
+            <button class="google-btn" type="button" id="googleLoginBtn">
+              <span class="icon">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" width="16" height="16" />
+              </span>
+              <span class="label">Continue with Google</span>
+            </button>
+            <p class="auth-note">Use Google to jump straight into your crew workspace—no password required.</p>
         </form>
         <form id="signupForm" hidden>
           <h2>Create Your Workspace</h2>
@@ -1423,9 +1561,10 @@
       const shareLinkDisplay = document.getElementById("shareLinkDisplay");
       const copyShareLinkBtn = document.getElementById("copyShareLink");
       const openShareLinkBtn = document.getElementById("openShareLink");
-      const regenerateShareBtn = document.getElementById("regenerateShare");
+        const regenerateShareBtn = document.getElementById("regenerateShare");
         const togglePublishBtn = document.getElementById("togglePublish");
         const publishStatusTag = document.getElementById("publishStatusTag");
+        const visibilityTag = document.getElementById("visibilityTag");
         const notificationSummary = document.getElementById("notificationSummary");
         const builderForm = document.getElementById("builderForm");
         const builderNameInput = document.getElementById("builderName");
@@ -1442,6 +1581,12 @@
         const builderNotifyRecipientsInput = document.getElementById("builderNotifyRecipients");
         const builderNotifySubjectInput = document.getElementById("builderNotifySubject");
         const builderNotifyMessageInput = document.getElementById("builderNotifyMessage");
+        const visibilityControl = document.getElementById("visibilityControl");
+        const visibilityButtons = visibilityControl ? visibilityControl.querySelectorAll("[data-visibility]") : [];
+const shareVisibilityControl = document.getElementById("shareVisibilityControl");
+const shareVisibilityButtons = shareVisibilityControl
+  ? shareVisibilityControl.querySelectorAll("[data-share-visibility]")
+  : [];
         const fieldInspectorForm = document.getElementById("fieldInspectorForm");
         const fieldInspectorEmpty = document.getElementById("fieldInspectorEmpty");
         const resetBuilderBtn = document.getElementById("resetBuilder");
@@ -1451,6 +1596,7 @@
         const quickViewGuideBtn = document.getElementById("quickViewGuide");
         const formBranding = document.getElementById("formBranding");
         const formBrandingLogo = document.getElementById("formBrandingLogo");
+        const googleLoginBtn = document.getElementById("googleLoginBtn");
 
       const FIELD_LIBRARY = [
         {
@@ -1533,6 +1679,7 @@
 
         function defaultBuilderSettings() {
           return {
+            visibility: "public",
             autoCalculateDuration: { startField: "startTime", endField: "endTime" },
             branding: { logoUrl: "" },
             notifications: {
@@ -1636,6 +1783,12 @@
           builderNotifyRecipientsInput?.addEventListener("input", handleNotificationRecipients);
           builderNotifySubjectInput?.addEventListener("input", handleNotificationSubject);
           builderNotifyMessageInput?.addEventListener("input", handleNotificationMessage);
+          visibilityButtons.forEach((button) => {
+            button.addEventListener("click", () => setBuilderVisibility(button.dataset.visibility));
+          });
+          shareVisibilityButtons.forEach((button) => {
+            button.addEventListener("click", () => updateFormVisibility(button.dataset.shareVisibility));
+          });
         authTabButtons.forEach((button) => {
           button.addEventListener("click", () => showAuthView(button.dataset.authView));
         });
@@ -1643,6 +1796,8 @@
         signupForm.addEventListener("submit", handleSignup);
         logoutBtn.addEventListener("click", handleLogout);
           updateNotificationFieldsState();
+          syncVisibilityControls();
+          googleLoginBtn?.addEventListener("click", handleGoogleLogin);
       }
 
       function startNewFormFlow() {
@@ -1706,6 +1861,100 @@
             .split(/[,;\n]/)
             .map((value) => value.trim())
             .filter(Boolean);
+        }
+
+        function syncVisibilityControls() {
+          if (!visibilityButtons?.length) return;
+          const current = state.builder.settings.visibility || "public";
+          visibilityButtons.forEach((button) => {
+            const isActive = button.dataset.visibility === current;
+            button.classList.toggle("active", isActive);
+            button.setAttribute("aria-pressed", isActive ? "true" : "false");
+          });
+        }
+
+        function setBuilderVisibility(nextVisibility) {
+          const normalized = nextVisibility === "private" ? "private" : "public";
+          state.builder.settings.visibility = normalized;
+          syncVisibilityControls();
+          renderBuilderPreview();
+        }
+
+        let firebaseAuthBootstrap = null;
+
+        async function ensureFirebaseAuth() {
+          if (firebaseAuthBootstrap) {
+            return firebaseAuthBootstrap;
+          }
+          firebaseAuthBootstrap = (async () => {
+            const config = window.__FIREBASE_CONFIG;
+            if (
+              !config ||
+              !config.apiKey ||
+              String(config.apiKey).toLowerCase().includes("your_firebase_api_key")
+            ) {
+              throw new Error(
+                "Configure Firebase keys by setting window.__FIREBASE_CONFIG before using Google login."
+              );
+            }
+            const [{ initializeApp }, authModule] = await Promise.all([
+              import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"),
+              import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js")
+            ]);
+            const app = initializeApp(config);
+            const auth = authModule.getAuth(app);
+            auth.languageCode = "en";
+            const provider = new authModule.GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: "select_account" });
+            return { auth, provider, signInWithPopup: authModule.signInWithPopup };
+          })().catch((error) => {
+            firebaseAuthBootstrap = null;
+            throw error;
+          });
+          return firebaseAuthBootstrap;
+        }
+
+        async function handleGoogleLogin() {
+          if (!googleLoginBtn) return;
+          displayAuthError();
+          const label = googleLoginBtn.querySelector(".label");
+          const originalText = label ? label.textContent : "";
+          googleLoginBtn.disabled = true;
+          if (label) {
+            label.textContent = "Connecting…";
+          }
+          try {
+            const { auth, provider, signInWithPopup } = await ensureFirebaseAuth();
+            const credentials = await signInWithPopup(auth, provider);
+            const idToken = await credentials.user.getIdToken();
+            const response = await apiFetch(
+              "/auth/firebase",
+              {
+                method: "POST",
+                body: JSON.stringify({ idToken })
+              },
+              { skipAuth: true }
+            );
+            applyAuthResponse(response.data);
+            hideAuthOverlay();
+            await loadForms();
+          } catch (error) {
+            console.error("Google login error:", error);
+            let message;
+            if (error?.message?.includes("Configure Firebase")) {
+              message = "Set your Firebase keys in window.__FIREBASE_CONFIG before using Google login.";
+            } else if (error?.code === "auth/popup-closed-by-user") {
+              message = "Google sign-in was closed before completing.";
+            } else {
+              message = error.message || "Unable to sign in with Google.";
+            }
+            displayAuthError(message);
+          } finally {
+            googleLoginBtn.disabled = false;
+            if (label) {
+              label.textContent = originalText || "Continue with Google";
+            }
+          }
         }
 
       function renderPaletteTabs() {
@@ -2022,8 +2271,13 @@
         loadSubmissions();
       }
 
-      function renderFormSelects() {
-        const options = state.forms.map((form) => `<option value="${form.id}">${form.name}</option>`).join("");
+        function renderFormSelects() {
+          const options = state.forms
+            .map((form) => {
+              const lock = form.visibility === "private" ? " 🔒" : "";
+              return `<option value="${form.id}">${escapeHtml(form.name)}${lock}</option>`;
+            })
+            .join("");
         formSelect.innerHTML = options;
         formSelectSubmissions.innerHTML = options;
         if (state.activeFormId) {
@@ -2032,11 +2286,12 @@
           const form = getActiveForm();
           if (form) {
             const statusLabel = form.isPublished ? "Published" : "Draft";
+              const visibilityLabel = form.visibility === "private" ? "Private" : "Public";
             const submissionsLabel =
               typeof form.submissionCount === "number" ? ` • ${form.submissionCount} submissions` : "";
             formMeta.textContent = `v${form.version} • ${statusLabel} • Updated ${new Date(
               form.updatedAt
-            ).toLocaleString()}${submissionsLabel}`;
+              ).toLocaleString()} • ${visibilityLabel}${submissionsLabel}`;
           } else {
             formMeta.textContent = "—";
           }
@@ -2575,38 +2830,70 @@
         }
       }
 
-      function updateSharePanel(form) {
-        if (!form || !state.auth.token) {
-          shareCard.hidden = true;
-          publishStatusTag.textContent = "";
-          publishStatusTag.classList.remove("published", "draft");
+        function updateSharePanel(form) {
+          if (!form || !state.auth.token) {
+            shareCard.hidden = true;
+            publishStatusTag.textContent = "";
+            publishStatusTag.classList.remove("published", "draft");
+            if (visibilityTag) {
+              visibilityTag.textContent = "";
+              visibilityTag.classList.remove("soft");
+            }
             if (notificationSummary) {
               notificationSummary.textContent = "";
             }
-          return;
-        }
-        shareCard.hidden = false;
-        const link = form.shareUrl || "";
-        shareLinkDisplay.textContent = link || "—";
-        shareLinkDisplay.title = link;
-        shareLinkDisplay.dataset.url = link;
-        const isPublished = Boolean(form.isPublished);
-        publishStatusTag.textContent = isPublished ? "Published" : "Draft";
-        publishStatusTag.classList.toggle("published", isPublished);
-        publishStatusTag.classList.toggle("draft", !isPublished);
-        togglePublishBtn.textContent = isPublished ? "Unpublish" : "Publish";
-        copyShareLinkBtn.disabled = !isPublished || !link;
-        openShareLinkBtn.disabled = !isPublished || !link;
-        regenerateShareBtn.disabled = false;
+            if (shareVisibilityButtons.length) {
+              shareVisibilityButtons.forEach((button) => {
+                button.classList.remove("active");
+                button.setAttribute("aria-pressed", "false");
+              });
+            }
+            return;
+          }
+          shareCard.hidden = false;
+          const visibility = form.visibility === "private" ? "private" : "public";
+          const link = form.shareUrl || "";
+          const isPublished = Boolean(form.isPublished);
+          const isPublic = visibility === "public";
+
+          shareLinkDisplay.textContent = isPublic && link ? link : isPublic ? "—" : "Private form";
+          shareLinkDisplay.title = isPublic ? link : "";
+          shareLinkDisplay.dataset.url = isPublic ? link : "";
+
+          publishStatusTag.textContent = isPublished ? "Published" : "Draft";
+          publishStatusTag.classList.toggle("published", isPublished);
+          publishStatusTag.classList.toggle("draft", !isPublished);
+
+          if (visibilityTag) {
+            visibilityTag.textContent = isPublic ? "Public" : "Private";
+            visibilityTag.classList.toggle("soft", isPublic);
+          }
+
+          togglePublishBtn.textContent = isPublished ? "Unpublish" : "Publish";
+          copyShareLinkBtn.disabled = !isPublic || !isPublished || !link;
+          openShareLinkBtn.disabled = !isPublic || !isPublished || !link;
+          regenerateShareBtn.disabled = !isPublic;
+
           if (notificationSummary) {
-            const notifications = form.settings?.notifications;
-            if (notifications?.enabled && Array.isArray(notifications.recipients) && notifications.recipients.length) {
-              notificationSummary.textContent = `Email notifications to ${notifications.recipients.join(", ")}`;
+            if (!isPublic) {
+              notificationSummary.textContent = "Private form — share link disabled.";
             } else {
-              notificationSummary.textContent = "Email notifications off";
+              const notifications = form.settings?.notifications;
+              if (notifications?.enabled && Array.isArray(notifications.recipients) && notifications.recipients.length) {
+                notificationSummary.textContent = `Email notifications to ${notifications.recipients.join(", ")}`;
+              } else {
+                notificationSummary.textContent = "Email notifications off";
+              }
             }
           }
-      }
+          if (shareVisibilityButtons.length) {
+            shareVisibilityButtons.forEach((button) => {
+              const isActive = button.dataset.shareVisibility === visibility;
+              button.classList.toggle("active", isActive);
+              button.setAttribute("aria-pressed", isActive ? "true" : "false");
+            });
+          }
+        }
 
       async function handleCopyShareLink() {
         const form = getActiveForm();
@@ -2615,6 +2902,10 @@
           showFillAlert("Publish the form before sharing.", "error");
           return;
         }
+          if (form.visibility === "private") {
+            showFillAlert("Private forms cannot generate share links.", "error");
+            return;
+          }
         const link = form.shareUrl;
         if (!link) {
           showFillAlert("Share link unavailable.", "error");
@@ -2631,13 +2922,17 @@
 
       function handleOpenShareLink() {
         const form = getActiveForm();
-        if (!form || !form.isPublished || !form.shareUrl) return;
+          if (!form || form.visibility === "private" || !form.isPublished || !form.shareUrl) return;
         window.open(form.shareUrl, "_blank", "noopener");
       }
 
       async function handleRegenerateShare() {
         const form = getActiveForm();
         if (!form) return;
+          if (form.visibility === "private") {
+            showFillAlert("Private forms cannot generate share links.", "error");
+            return;
+          }
         const confirmed = confirm("Generate a new link? The previous URL will stop working immediately.");
         if (!confirmed) return;
         try {
@@ -2652,6 +2947,32 @@
           showFillAlert(error.message ?? "Unable to regenerate share link.", "error");
         }
       }
+
+        async function updateFormVisibility(nextVisibility) {
+          const form = getActiveForm();
+          if (!form) return;
+          const normalized = nextVisibility === "private" ? "private" : "public";
+          if (form.visibility === normalized) {
+            return;
+          }
+          try {
+            const response = await apiFetch(`/forms/${form.id}`, {
+              method: "PUT",
+              body: JSON.stringify({ visibility: normalized })
+            });
+            const updated = response.data;
+            updateFormInState(updated);
+            renderFormSelects();
+            updateSharePanel(updated);
+            showFillAlert(
+              normalized === "private" ? "Form is now private to your workspace." : "Form is now public and shareable.",
+              "success"
+            );
+          } catch (error) {
+            console.error("Visibility update error:", error);
+            showFillAlert(error.message ?? "Unable to update visibility.", "error");
+          }
+        }
 
       async function handleTogglePublish() {
         const form = getActiveForm();
@@ -2792,22 +3113,29 @@
         renderBuilderFields();
       }
 
-      function duplicateBuilderField(fieldId) {
-        const original = state.builder.fields.find((field) => field.id === fieldId);
-        if (!original) return;
-        const copy = JSON.parse(JSON.stringify(original));
-        copy.id = slugify(`${copy.id || "field"}-copy-${Date.now()}`);
-        copy.label = `${copy.label || "Field"} Copy`;
-        state.builder.fields.push(copy);
-        selectBuilderField(copy.id);
-      }
+        function duplicateBuilderField(fieldId) {
+          const original = state.builder.fields.find((field) => field.id === fieldId);
+          if (!original) return;
+          const copy = JSON.parse(JSON.stringify(original));
+          copy.id = slugify(`${copy.id || "field"}-copy-${Date.now()}`);
+          copy.label = `${copy.label || "Field"} Copy`;
+          state.builder.fields.push(copy);
+          selectBuilderField(copy.id);
+        }
 
         function renderBuilderPreview() {
+          const visibility = state.builder.settings?.visibility === "private" ? "private" : "public";
           const branding = state.builder.settings?.branding ?? {};
           const notifications = state.builder.settings?.notifications ?? {};
           const logoUrl = branding.logoUrl?.trim();
           const fieldsMarkup = state.builder.fields.map(renderPreviewControl).join("");
           const hasFields = Boolean(state.builder.fields.length);
+          const visibilityLabel =
+            visibility === "private" ? "Private • workspace only" : "Public • shareable link";
+          const visibilityNote =
+            visibility === "private"
+              ? "Private form — only signed-in workspace members can fill it."
+              : "Public form — share link is available for external responses.";
           const recipientList = (notifications.recipients || []).join(", ") || "configured recipients";
           const notificationsMarkup = notifications.enabled
             ? `<div class="preview-note">Email notifications to ${escapeHtml(recipientList)}</div>`
@@ -2817,6 +3145,8 @@
             : "";
           builderPreviewForm.innerHTML = `
             ${headerMarkup}
+            <div class="preview-pill">${escapeHtml(visibilityLabel)}</div>
+            <div class="preview-note">${escapeHtml(visibilityNote)}</div>
             ${hasFields ? fieldsMarkup : '<div class="empty-state">Add fields from the palette to preview your form.</div>'}
             ${notificationsMarkup}
           `;
@@ -3008,6 +3338,7 @@
         state.builder.selectedFieldId = null;
           state.builder.settings = defaultBuilderSettings();
         builderForm.reset();
+          syncVisibilityControls();
           if (builderLogoInput) {
             builderLogoInput.value = state.builder.settings.branding.logoUrl;
           }
@@ -3075,7 +3406,8 @@
               name,
               description: builderDescriptionInput.value,
               fields: cleanedFields,
-                settings
+                settings,
+                visibility: state.builder.settings.visibility
             })
           });
             const newForm = normalizeForm(response.data);
@@ -3352,6 +3684,7 @@
             : [];
           return {
             ...form,
+            visibility: form.visibility === "private" ? "private" : "public",
             fields: normalizedFields,
             settings: normalizeSettings(form.settings ?? {})
           };
