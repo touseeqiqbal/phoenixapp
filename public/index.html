@@ -208,6 +208,19 @@
         background: rgba(15, 23, 42, 0.72);
         box-shadow: 0 28px 48px -36px rgba(8, 12, 28, 0.6);
       }
+      .form-branding {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 0.75rem;
+      }
+      .form-branding img {
+        max-height: 56px;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        background: rgba(8, 12, 24, 0.55);
+        padding: 0.3rem 0.75rem;
+      }
       .user-bar h4 {
         margin: 0;
         font-size: 1.05rem;
@@ -290,6 +303,53 @@
         display: inline-flex;
         align-items: center;
         gap: 0.45rem;
+      }
+      .settings-grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        margin-top: 0.5rem;
+      }
+      .settings-section {
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        border-radius: 16px;
+        background: rgba(12, 19, 34, 0.7);
+        padding: 1rem 1.1rem 1.2rem;
+        display: grid;
+        gap: 0.8rem;
+      }
+      .settings-section legend {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: rgba(226, 232, 240, 0.85);
+        padding: 0 0.35rem;
+      }
+      .settings-section label {
+        display: grid;
+        gap: 0.4rem;
+        font-size: 0.88rem;
+      }
+      .settings-section label.disabled {
+        opacity: 0.6;
+      }
+      .settings-section label.disabled input,
+      .settings-section label.disabled textarea {
+        cursor: not-allowed;
+      }
+      .toggle-row {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        font-size: 0.9rem;
+      }
+      .toggle-row input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--accent);
+      }
+      .input-hint {
+        color: rgba(148, 163, 184, 0.75);
+        font-size: 0.78rem;
       }
       .workspace-hero {
         display: grid;
@@ -788,6 +848,24 @@
         color: inherit;
         font-size: 0.9rem;
       }
+      .preview-branding {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 1rem;
+      }
+      .preview-branding img {
+        max-height: 64px;
+        border-radius: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(8, 13, 28, 0.6);
+        padding: 0.4rem 0.8rem;
+      }
+      .preview-note {
+        margin-top: 0.5rem;
+        font-size: 0.78rem;
+        color: rgba(148, 163, 184, 0.75);
+        text-align: center;
+      }
       .preview-heading {
         margin: 0;
         font-size: 1.15rem;
@@ -1042,6 +1120,9 @@
             <div class="two-column">
               <div class="card">
                 <h3>Visit Details</h3>
+                <div class="form-branding" id="formBranding" hidden>
+                  <img id="formBrandingLogo" alt="Form logo" />
+                </div>
                 <div class="controls-row">
                   <label style="flex:1 1 260px">
                     <span>Form Template</span>
@@ -1065,6 +1146,7 @@
                       Publish the template to collect responses on phones or embed it into your client portal.
                     </p>
                     <div class="tag" id="publishStatusTag"></div>
+                      <p class="panel-subtitle" id="notificationSummary"></p>
                   </div>
                   <div class="share-actions">
                     <span class="share-link" id="shareLinkDisplay">—</span>
@@ -1120,9 +1202,39 @@
                   Description
                   <textarea id="builderDescription" name="description" rows="2" placeholder="Explain when crews should use this form"></textarea>
                 </label>
-                <div class="panel-subtitle">
-                  Publish saves a new form and makes it available in the Fill Form tab for crews.
-                </div>
+                  <div class="panel-subtitle">
+                    Publish saves a new form and makes it available in the Fill Form tab for crews.
+                  </div>
+                  <div class="settings-grid">
+                    <fieldset class="settings-section">
+                      <legend>Branding</legend>
+                      <label>
+                        Logo URL
+                        <input type="url" id="builderLogoUrl" name="logoUrl" placeholder="https://cdn.example.com/form-logo.png" />
+                        <span class="input-hint">Shown on crew fill view and public form.</span>
+                      </label>
+                    </fieldset>
+                    <fieldset class="settings-section">
+                      <legend>Email Notifications</legend>
+                      <label class="toggle-row">
+                        <input type="checkbox" id="builderNotifyEnabled" />
+                        <span>Send an email for each submission</span>
+                      </label>
+                      <label>
+                        Recipients
+                        <input type="text" id="builderNotifyRecipients" placeholder="owner@company.com, manager@company.com" />
+                        <span class="input-hint">Separate multiple addresses with commas.</span>
+                      </label>
+                      <label>
+                        Subject
+                        <input type="text" id="builderNotifySubject" placeholder="New submission from {{formName}}" />
+                      </label>
+                      <label>
+                        Message
+                        <textarea id="builderNotifyMessage" rows="3" placeholder="Add an optional message. Tokens: {{formName}}, {{submissionId}}."></textarea>
+                      </label>
+                    </fieldset>
+                  </div>
                 <div class="controls-row">
                   <button class="primary" type="submit">Publish Form</button>
                   <button class="ghost" type="button" id="resetBuilder">Reset Builder</button>
@@ -1208,6 +1320,7 @@
                       <option value="time">Time</option>
                       <option value="number">Number</option>
                       <option value="file">File Upload</option>
+                        <option value="image-upload">Image Upload</option>
                       <option value="email">Email</option>
                       <option value="tel">Phone</option>
                       <option value="address">Address</option>
@@ -1311,25 +1424,33 @@
       const copyShareLinkBtn = document.getElementById("copyShareLink");
       const openShareLinkBtn = document.getElementById("openShareLink");
       const regenerateShareBtn = document.getElementById("regenerateShare");
-      const togglePublishBtn = document.getElementById("togglePublish");
-      const publishStatusTag = document.getElementById("publishStatusTag");
-      const builderForm = document.getElementById("builderForm");
-      const builderNameInput = document.getElementById("builderName");
-      const builderDescriptionInput = document.getElementById("builderDescription");
-      const builderAlerts = document.getElementById("builderAlerts");
-      const tabs = document.querySelectorAll(".workspace-tabs button");
-      const sidebarButtons = document.querySelectorAll(".sidebar-nav button");
-      const paletteTabs = document.getElementById("paletteTabs");
-      const fieldPalette = document.getElementById("fieldPalette");
-      const builderCanvas = document.getElementById("builderCanvas");
-      const builderPreviewForm = document.getElementById("builderPreviewForm");
-      const fieldInspectorForm = document.getElementById("fieldInspectorForm");
-      const fieldInspectorEmpty = document.getElementById("fieldInspectorEmpty");
-      const resetBuilderBtn = document.getElementById("resetBuilder");
-      const packagesList = document.getElementById("packagesList");
-      const quickNewFormBtn = document.getElementById("quickNewForm");
-      const quickInviteTeamBtn = document.getElementById("quickInviteTeam");
-      const quickViewGuideBtn = document.getElementById("quickViewGuide");
+        const togglePublishBtn = document.getElementById("togglePublish");
+        const publishStatusTag = document.getElementById("publishStatusTag");
+        const notificationSummary = document.getElementById("notificationSummary");
+        const builderForm = document.getElementById("builderForm");
+        const builderNameInput = document.getElementById("builderName");
+        const builderDescriptionInput = document.getElementById("builderDescription");
+        const builderAlerts = document.getElementById("builderAlerts");
+        const tabs = document.querySelectorAll(".workspace-tabs button");
+        const sidebarButtons = document.querySelectorAll(".sidebar-nav button");
+        const paletteTabs = document.getElementById("paletteTabs");
+        const fieldPalette = document.getElementById("fieldPalette");
+        const builderCanvas = document.getElementById("builderCanvas");
+        const builderPreviewForm = document.getElementById("builderPreviewForm");
+        const builderLogoInput = document.getElementById("builderLogoUrl");
+        const builderNotifyToggle = document.getElementById("builderNotifyEnabled");
+        const builderNotifyRecipientsInput = document.getElementById("builderNotifyRecipients");
+        const builderNotifySubjectInput = document.getElementById("builderNotifySubject");
+        const builderNotifyMessageInput = document.getElementById("builderNotifyMessage");
+        const fieldInspectorForm = document.getElementById("fieldInspectorForm");
+        const fieldInspectorEmpty = document.getElementById("fieldInspectorEmpty");
+        const resetBuilderBtn = document.getElementById("resetBuilder");
+        const packagesList = document.getElementById("packagesList");
+        const quickNewFormBtn = document.getElementById("quickNewForm");
+        const quickInviteTeamBtn = document.getElementById("quickInviteTeam");
+        const quickViewGuideBtn = document.getElementById("quickViewGuide");
+        const formBranding = document.getElementById("formBranding");
+        const formBrandingLogo = document.getElementById("formBrandingLogo");
 
       const FIELD_LIBRARY = [
         {
@@ -1365,6 +1486,13 @@
           label: "Widgets",
           items: [
             { type: "image", label: "Image", description: "Embed an illustrative image block.", icon: "🖼", status: "live" },
+              {
+                type: "image-upload",
+                label: "Image Upload",
+                description: "Collect photos with image-only restrictions.",
+                icon: "📸",
+                status: "live"
+              },
             { type: "file", label: "File Upload", description: "Accept photos, receipts, or PDFs.", icon: "📁", status: "live" },
             { type: "signature", label: "Signature", description: "Collect digital signatures on site.", icon: "✍", status: "soon" },
             { type: "fill-blank", label: "Fill in the Blank", description: "Structured statements with blanks.", icon: "▭", status: "soon" },
@@ -1393,14 +1521,29 @@
         }
       ];
 
-      const FIELD_BLUEPRINT_INDEX = FIELD_LIBRARY.reduce((acc, category) => {
-        category.items.forEach((item) => {
-          acc[item.type] = item;
-        });
-        return acc;
-      }, {});
-      const STATIC_FIELD_TYPES = new Set(["heading", "paragraph", "divider", "image"]);
-      const OPTION_FIELD_TYPES = new Set(["select", "checkbox-group", "single-choice"]);
+        const FIELD_BLUEPRINT_INDEX = FIELD_LIBRARY.reduce((acc, category) => {
+          category.items.forEach((item) => {
+            acc[item.type] = item;
+          });
+          return acc;
+        }, {});
+        const STATIC_FIELD_TYPES = new Set(["heading", "paragraph", "divider", "image"]);
+        const OPTION_FIELD_TYPES = new Set(["select", "checkbox-group", "single-choice"]);
+        const FILE_FIELD_TYPES = new Set(["file", "image-upload"]);
+
+        function defaultBuilderSettings() {
+          return {
+            autoCalculateDuration: { startField: "startTime", endField: "endTime" },
+            branding: { logoUrl: "" },
+            notifications: {
+              enabled: false,
+              recipients: [],
+              subject: "New submission from {{formName}}",
+              message: "A new submission was received for {{formName}}.",
+              includeSubmission: true
+            }
+          };
+        }
 
       const authOverlay = document.getElementById("authOverlay");
       const authTabButtons = document.querySelectorAll("[data-auth-view]");
@@ -1432,7 +1575,8 @@
           fields: [],
           selectedFieldId: null,
           sortable: null,
-          paletteCategory: FIELD_LIBRARY[0]?.id ?? "basic"
+            paletteCategory: FIELD_LIBRARY[0]?.id ?? "basic",
+            settings: defaultBuilderSettings()
         }
       };
 
@@ -1441,6 +1585,7 @@
         renderPaletteTabs();
         renderFieldPalette();
         renderBuilderFields();
+  resetBuilder();
         await loadPackages();
         await bootstrapAuth();
       })().catch((error) => {
@@ -1486,12 +1631,18 @@
         fieldInspectorForm.addEventListener("change", handleInspectorInput);
         builderForm.addEventListener("submit", handleBuilderSubmit);
         resetBuilderBtn.addEventListener("click", resetBuilder);
+          builderLogoInput?.addEventListener("input", handleBrandingInput);
+          builderNotifyToggle?.addEventListener("change", handleNotificationToggle);
+          builderNotifyRecipientsInput?.addEventListener("input", handleNotificationRecipients);
+          builderNotifySubjectInput?.addEventListener("input", handleNotificationSubject);
+          builderNotifyMessageInput?.addEventListener("input", handleNotificationMessage);
         authTabButtons.forEach((button) => {
           button.addEventListener("click", () => showAuthView(button.dataset.authView));
         });
         loginForm.addEventListener("submit", handleLogin);
         signupForm.addEventListener("submit", handleSignup);
         logoutBtn.addEventListener("click", handleLogout);
+          updateNotificationFieldsState();
       }
 
       function startNewFormFlow() {
@@ -1508,6 +1659,54 @@
         );
         window.location.href = `mailto:?subject=${subject}&body=${body}`;
       }
+
+        function handleBrandingInput() {
+          const url = builderLogoInput?.value?.trim() ?? "";
+          state.builder.settings.branding.logoUrl = url;
+          renderBuilderPreview();
+        }
+
+        function handleNotificationToggle() {
+          const enabled = Boolean(builderNotifyToggle?.checked);
+          state.builder.settings.notifications.enabled = enabled;
+          updateNotificationFieldsState();
+          renderBuilderPreview();
+        }
+
+        function handleNotificationRecipients() {
+          const recipients = parseRecipientList(builderNotifyRecipientsInput?.value ?? "");
+          state.builder.settings.notifications.recipients = recipients;
+          renderBuilderPreview();
+        }
+
+        function handleNotificationSubject() {
+          state.builder.settings.notifications.subject = builderNotifySubjectInput?.value ?? "";
+          renderBuilderPreview();
+        }
+
+        function handleNotificationMessage() {
+          state.builder.settings.notifications.message = builderNotifyMessageInput?.value ?? "";
+        }
+
+        function updateNotificationFieldsState() {
+          const enabled = state.builder.settings.notifications.enabled;
+          const controls = [
+            builderNotifyRecipientsInput,
+            builderNotifySubjectInput,
+            builderNotifyMessageInput
+          ].filter(Boolean);
+          controls.forEach((input) => {
+            input.disabled = !enabled;
+            input.closest("label")?.classList.toggle("disabled", !enabled);
+          });
+        }
+
+        function parseRecipientList(raw) {
+          return String(raw)
+            .split(/[,;\n]/)
+            .map((value) => value.trim())
+            .filter(Boolean);
+        }
 
       function renderPaletteTabs() {
         if (!paletteTabs) return;
@@ -1627,6 +1826,11 @@
           case "file":
             baseField.placeholder ||= "Upload files";
             break;
+            case "image-upload":
+              baseField.placeholder ||= "Upload an image";
+              baseField.accepts = ["image/png", "image/jpeg", "image/webp"];
+              baseField.multiple = blueprint.multiple ?? false;
+              break;
         }
         baseField.displayOnly = STATIC_FIELD_TYPES.has(baseField.type) || Boolean(baseField.displayOnly);
         if (baseField.displayOnly) {
@@ -1758,8 +1962,8 @@
       async function loadForms() {
         if (!state.auth.token) return;
         try {
-          const body = await apiFetch("/forms?includeStats=true");
-          state.forms = body.data ?? [];
+            const body = await apiFetch("/forms?includeStats=true");
+            state.forms = (body.data ?? []).map((form) => normalizeForm(form));
           if (!state.activeFormId && state.forms.length) {
             state.activeFormId = state.forms[0].id;
           }
@@ -1848,6 +2052,16 @@
           updateSharePanel(null);
           return;
         }
+          const logoUrl = form.settings?.branding?.logoUrl?.trim();
+          if (formBranding && formBrandingLogo) {
+            if (logoUrl) {
+              formBrandingLogo.src = logoUrl;
+              formBranding.hidden = false;
+            } else {
+              formBranding.hidden = true;
+              formBrandingLogo.removeAttribute("src");
+            }
+          }
         if (!form.fields?.length) {
           dynamicForm.innerHTML = `<div class="empty-state">This form has no fields yet.</div>`;
           updateSharePanel(form);
@@ -2012,6 +2226,13 @@
               control.accept = field.accepts.join(",");
             }
             break;
+            case "image-upload":
+              control = document.createElement("input");
+              control.type = "file";
+              control.name = field.id;
+              control.accept = "image/*";
+              if (field.multiple) control.multiple = true;
+              break;
           default:
             control = document.createElement("input");
             control.type = "text";
@@ -2129,14 +2350,15 @@
         const ref = state.fieldRefs.get(field.id);
         if (!ref) return null;
         const wrapper = ref.element;
-        switch (field.type) {
+          switch (field.type) {
           case "checkbox-group":
             return Array.from(wrapper.querySelectorAll('input[type="checkbox"]:checked')).map((input) => input.value);
           case "single-choice": {
             const selected = wrapper.querySelector('input[type="radio"]:checked');
             return selected ? selected.value : "";
           }
-          case "file": {
+            case "file":
+            case "image-upload": {
             const input = wrapper.querySelector('input[type="file"]');
             if (!input || !input.files) return [];
             return Array.from(input.files).map((file) => ({
@@ -2160,7 +2382,7 @@
         if (!ref) return;
         state.currentValues[field.id] = value;
         const wrapper = ref.element;
-        switch (field.type) {
+          switch (field.type) {
           case "checkbox-group": {
             const values = Array.isArray(value) ? value : [value];
             wrapper.querySelectorAll('input[type="checkbox"]').forEach((input) => {
@@ -2174,7 +2396,13 @@
             });
             break;
           }
-        case "textarea":
+          case "file":
+          case "image-upload":
+            if (wrapper.querySelector('input[type="file"]')) {
+              wrapper.querySelector('input[type="file"]').value = "";
+            }
+            break;
+          case "textarea":
         case "address":
           wrapper.querySelector("textarea").value = value ?? "";
           break;
@@ -2280,7 +2508,7 @@
         if (field.type === "select") {
           return findOptionLabel(field, value) ?? "—";
         }
-        if (field.type === "file") {
+          if (field.type === "file" || field.type === "image-upload") {
           const files = Array.isArray(value) ? value : [];
           return files.length ? `${files.length} file(s)` : "—";
         }
@@ -2352,6 +2580,9 @@
           shareCard.hidden = true;
           publishStatusTag.textContent = "";
           publishStatusTag.classList.remove("published", "draft");
+            if (notificationSummary) {
+              notificationSummary.textContent = "";
+            }
           return;
         }
         shareCard.hidden = false;
@@ -2367,6 +2598,14 @@
         copyShareLinkBtn.disabled = !isPublished || !link;
         openShareLinkBtn.disabled = !isPublished || !link;
         regenerateShareBtn.disabled = false;
+          if (notificationSummary) {
+            const notifications = form.settings?.notifications;
+            if (notifications?.enabled && Array.isArray(notifications.recipients) && notifications.recipients.length) {
+              notificationSummary.textContent = `Email notifications to ${notifications.recipients.join(", ")}`;
+            } else {
+              notificationSummary.textContent = "Email notifications off";
+            }
+          }
       }
 
       async function handleCopyShareLink() {
@@ -2439,16 +2678,17 @@
 
       async function fetchFormById(formId) {
         const response = await apiFetch(`/forms/${formId}`);
-        return response.data;
+          return normalizeForm(response.data);
       }
 
-      function updateFormInState(updatedForm) {
-        if (!updatedForm) return;
-        const index = state.forms.findIndex((form) => form.id === updatedForm.id);
+        function updateFormInState(updatedForm) {
+          if (!updatedForm) return;
+          const normalized = normalizeForm(updatedForm);
+          const index = state.forms.findIndex((form) => form.id === normalized.id);
         if (index >= 0) {
-          state.forms[index] = updatedForm;
+            state.forms[index] = normalized;
         } else {
-          state.forms.push(updatedForm);
+            state.forms.push(normalized);
         }
       }
 
@@ -2562,13 +2802,25 @@
         selectBuilderField(copy.id);
       }
 
-      function renderBuilderPreview() {
-        if (!state.builder.fields.length) {
-          builderPreviewForm.innerHTML = `<div class="empty-state">Add fields from the palette to preview your form.</div>`;
-          return;
+        function renderBuilderPreview() {
+          const branding = state.builder.settings?.branding ?? {};
+          const notifications = state.builder.settings?.notifications ?? {};
+          const logoUrl = branding.logoUrl?.trim();
+          const fieldsMarkup = state.builder.fields.map(renderPreviewControl).join("");
+          const hasFields = Boolean(state.builder.fields.length);
+          const recipientList = (notifications.recipients || []).join(", ") || "configured recipients";
+          const notificationsMarkup = notifications.enabled
+            ? `<div class="preview-note">Email notifications to ${escapeHtml(recipientList)}</div>`
+            : `<div class="preview-note">Email notifications off</div>`;
+          const headerMarkup = logoUrl
+            ? `<div class="preview-branding"><img src="${escapeHtml(logoUrl)}" alt="Form logo preview" /></div>`
+            : "";
+          builderPreviewForm.innerHTML = `
+            ${headerMarkup}
+            ${hasFields ? fieldsMarkup : '<div class="empty-state">Add fields from the palette to preview your form.</div>'}
+            ${notificationsMarkup}
+          `;
         }
-        builderPreviewForm.innerHTML = state.builder.fields.map(renderPreviewControl).join("");
-      }
 
       function renderPreviewControl(field) {
         const label = escapeHtml(field.label || field.id);
@@ -2669,6 +2921,13 @@
                 <small>${placeholder}</small>
                 <input type="${field.type === "tel" ? "tel" : field.type}" disabled placeholder="${placeholder}" />
               </label>`;
+            case "image-upload":
+              return `
+                <label>
+                  ${label} ${statusTag}
+                  <small>${placeholder}</small>
+                  <input type="file" disabled accept="image/*" />
+                </label>`;
           default:
             return `
               <label>
@@ -2696,6 +2955,18 @@
         } else {
           field.options = [];
         }
+          if (FILE_FIELD_TYPES.has(field.type)) {
+            field.accepts =
+              Array.isArray(field.accepts) && field.accepts.length
+                ? field.accepts
+                : field.type === "image-upload"
+                ? ["image/png", "image/jpeg", "image/webp"]
+                : [];
+            field.multiple = Boolean(field.multiple);
+          } else {
+            delete field.accepts;
+            delete field.multiple;
+          }
         renderBuilderFields();
       }
 
@@ -2735,7 +3006,24 @@
       function resetBuilder() {
         state.builder.fields = [];
         state.builder.selectedFieldId = null;
+          state.builder.settings = defaultBuilderSettings();
         builderForm.reset();
+          if (builderLogoInput) {
+            builderLogoInput.value = state.builder.settings.branding.logoUrl;
+          }
+          if (builderNotifyToggle) {
+            builderNotifyToggle.checked = state.builder.settings.notifications.enabled;
+          }
+          if (builderNotifyRecipientsInput) {
+            builderNotifyRecipientsInput.value = state.builder.settings.notifications.recipients.join(", ");
+          }
+          if (builderNotifySubjectInput) {
+            builderNotifySubjectInput.value = state.builder.settings.notifications.subject;
+          }
+          if (builderNotifyMessageInput) {
+            builderNotifyMessageInput.value = state.builder.settings.notifications.message;
+          }
+          updateNotificationFieldsState();
         renderBuilderFields();
         builderAlerts.innerHTML = "";
       }
@@ -2751,6 +3039,25 @@
           showBuilderAlert("Add at least one field before publishing.", "error");
           return;
         }
+          const brandingLogo = state.builder.settings.branding?.logoUrl?.trim() || "";
+          const notificationState = state.builder.settings.notifications ?? {};
+          const recipients =
+            notificationState.recipients && Array.isArray(notificationState.recipients)
+              ? notificationState.recipients.map((email) => email.trim()).filter(Boolean)
+              : parseRecipientList(builderNotifyRecipientsInput?.value ?? "");
+          const notifications = {
+            ...notificationState,
+            enabled: notificationState.enabled && recipients.length > 0,
+            recipients,
+            subject:
+              (notificationState.subject && notificationState.subject.trim()) || `New submission from ${name}`,
+            message: (notificationState.message ?? "").trim()
+          };
+          const settings = {
+            ...state.builder.settings,
+            branding: { logoUrl: brandingLogo },
+            notifications
+          };
         const cleanedFields = state.builder.fields.map((field) => ({
           id: slugify(field.id || field.label),
           label: field.label,
@@ -2768,13 +3075,12 @@
               name,
               description: builderDescriptionInput.value,
               fields: cleanedFields,
-              settings: {}
+                settings
             })
           });
-          const newForm = response.data;
+            const newForm = normalizeForm(response.data);
           showBuilderAlert("Form published successfully.", "success");
           resetBuilder();
-          state.forms.push(newForm);
           state.activeFormId = newForm.id;
           await loadForms();
         } catch (error) {
@@ -2986,6 +3292,70 @@
             .filter(Boolean)
         );
       }
+
+        function normalizeField(field) {
+          if (!field) return null;
+          const normalized = {
+            ...field,
+            kind: field.kind || FIELD_BLUEPRINT_INDEX[field.type]?.label || field.type,
+            displayOnly: STATIC_FIELD_TYPES.has(field.type) || Boolean(field.displayOnly)
+          };
+          if (OPTION_FIELD_TYPES.has(field.type)) {
+            normalized.options = normalizeFieldOptions(field.options ?? []);
+          }
+          if (FILE_FIELD_TYPES.has(field.type)) {
+            if (!Array.isArray(normalized.accepts) || !normalized.accepts.length) {
+              normalized.accepts =
+                field.type === "image-upload" ? ["image/png", "image/jpeg", "image/webp"] : [];
+            }
+            normalized.multiple = Boolean(field.multiple);
+          }
+          return normalized;
+        }
+
+        function normalizeSettings(settings = {}) {
+          const defaults = defaultBuilderSettings();
+          const branding = {
+            ...defaults.branding,
+            ...(settings.branding ?? {})
+          };
+          branding.logoUrl = branding.logoUrl?.trim() || "";
+          const notifications = {
+            ...defaults.notifications,
+            ...(settings.notifications ?? {})
+          };
+          notifications.recipients = Array.isArray(notifications.recipients)
+            ? notifications.recipients.map((email) => email.trim()).filter(Boolean)
+            : [];
+          notifications.subject =
+            notifications.subject?.trim() || defaults.notifications.subject;
+          notifications.message = notifications.message?.trim() || "";
+          if (!notifications.recipients.length) {
+            notifications.enabled = false;
+          }
+          return {
+            ...defaults,
+            ...settings,
+            autoCalculateDuration: {
+              ...defaults.autoCalculateDuration,
+              ...(settings.autoCalculateDuration ?? {})
+            },
+            branding,
+            notifications
+          };
+        }
+
+        function normalizeForm(form) {
+          if (!form) return null;
+          const normalizedFields = Array.isArray(form.fields)
+            ? form.fields.map((field) => normalizeField(field)).filter(Boolean)
+            : [];
+          return {
+            ...form,
+            fields: normalizedFields,
+            settings: normalizeSettings(form.settings ?? {})
+          };
+        }
 
       renderBuilderFields();
     </script>

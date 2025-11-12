@@ -1,5 +1,6 @@
 const express = require("express");
 const store = require("../data/store");
+const { dispatchSubmissionNotification } = require("../utils/notifications");
 
 const router = express.Router();
 
@@ -74,6 +75,8 @@ router.post("/forms/:shareKey/submissions", (req, res) => {
     }
   }
   const submission = store.addSubmission(form.id, payload);
+  const workspace = store.getWorkspace(form.workspaceId);
+  dispatchSubmissionNotification({ form, submission, workspace });
   res.status(201).json({ data: { id: submission.id, submittedAt: submission.submittedAt } });
 });
 

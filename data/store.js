@@ -58,6 +58,51 @@ function uniqueShareKey(existing) {
 
 const nowIso = () => new Date().toISOString();
 
+function defaultFormSettings() {
+  return {
+    allowCsvExport: true,
+    autoCalculateDuration: { startField: "startTime", endField: "endTime" },
+    branding: { logoUrl: "" },
+    notifications: {
+      enabled: false,
+      recipients: [],
+      subject: "New submission from {{formName}}",
+      message: "A new submission was received for {{formName}}.",
+      includeSubmission: true
+    }
+  };
+}
+
+function mergeSettings(settings = {}) {
+  const defaults = defaultFormSettings();
+  const result = {
+    ...defaults,
+    ...settings,
+    autoCalculateDuration: {
+      ...defaults.autoCalculateDuration,
+      ...(settings.autoCalculateDuration ?? {})
+    },
+    branding: {
+      ...defaults.branding,
+      ...(settings.branding ?? {})
+    },
+    notifications: {
+      ...defaults.notifications,
+      ...(settings.notifications ?? {})
+    }
+  };
+  result.branding.logoUrl = (result.branding.logoUrl || "").trim();
+  result.notifications.recipients = Array.isArray(result.notifications.recipients)
+    ? result.notifications.recipients.map((email) => email.trim()).filter(Boolean)
+    : [];
+  result.notifications.subject = (result.notifications.subject || defaults.notifications.subject).trim();
+  result.notifications.message = (result.notifications.message || "").trim();
+  if (!result.notifications.recipients.length) {
+    result.notifications.enabled = false;
+  }
+  return result;
+}
+
 const defaultData = {
   workspaces: [
     {
@@ -212,19 +257,15 @@ const defaultData = {
         },
         {
           id: "photos",
-          type: "file",
+          type: "image-upload",
           label: "Upload Photos",
           accepts: ["image/png", "image/jpeg", "image/webp"],
           multiple: true
         }
       ],
-      settings: {
-        allowCsvExport: true,
-        autoCalculateDuration: { startField: "startTime", endField: "endTime" },
-        notifications: {
-          enabled: false
-        }
-      },
+      settings: mergeSettings({
+        branding: { logoUrl: "/assets/logo.svg" }
+      }),
       createdAt: nowIso(),
       updatedAt: nowIso()
     }
@@ -340,7 +381,7 @@ class Store {
         isPublished: form.isPublished ?? false,
         shareKey: form.shareKey ?? uniqueShareKey(existingKeys),
         fields: Array.isArray(form.fields) ? form.fields : [],
-        settings: form.settings ?? {},
+          settings: mergeSettings(form.settings),
         createdAt: form.createdAt ?? nowIso(),
         updatedAt: form.updatedAt ?? nowIso()
       };
@@ -479,7 +520,7 @@ class Store {
       isPublished: payload.isPublished ?? false,
       shareKey: uniqueShareKey(this.data.forms.map((item) => item.shareKey)),
       fields: Array.isArray(payload.fields) ? payload.fields : [],
-      settings: payload.settings ?? {},
+        settings: mergeSettings(payload.settings),
       createdAt: now,
       updatedAt: now
     };
@@ -491,9 +532,14 @@ class Store {
   updateForm(formId, updates) {
     const form = this.getForm(formId);
     if (!form) return null;
+      const hasSettingsUpdate = Object.prototype.hasOwnProperty.call(updates, "settings");
+      const nextSettings = hasSettingsUpdate
+        ? mergeSettings({ ...form.settings, ...(updates.settings ?? {}) })
+        : mergeSettings(form.settings);
     const next = {
       ...form,
       ...updates,
+        settings: nextSettings,
       slug: updates.slug ? slugify(updates.slug) : form.slug,
       updatedAt: nowIso(),
       version: (form.version ?? 1) + 1

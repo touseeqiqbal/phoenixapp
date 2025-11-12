@@ -1,5 +1,6 @@
 const express = require("express");
 const store = require("../data/store");
+const { dispatchSubmissionNotification } = require("../utils/notifications");
 
 const router = express.Router();
 
@@ -156,6 +157,8 @@ router.post("/:id/submissions", (req, res) => {
     return res.status(400).json({ error: "Missing required fields", fields: missing });
   }
   const submission = store.addSubmission(form.id, payload);
+  const workspace = req.workspace || store.getWorkspace(form.workspaceId);
+  dispatchSubmissionNotification({ form, submission, workspace });
   res.status(201).json({ data: submission });
 });
 
