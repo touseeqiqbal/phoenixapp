@@ -64,6 +64,8 @@ const defaultData = {
       id: "workspace-demo",
       name: "Demo Landscaping Workspace",
       slug: "demo-landscaping",
+      ownerId: "user-owner",
+      packageId: "package-pro",
       color: "#38bdf8",
       createdAt: nowIso(),
       updatedAt: nowIso()
@@ -227,6 +229,53 @@ const defaultData = {
       updatedAt: nowIso()
     }
   ],
+  packages: [
+    {
+      id: "package-starter",
+      name: "Starter",
+      description: "Up to 5 forms, 500 submissions/month. Perfect for solo operators.",
+      priceMonthly: 19,
+      priceAnnual: 199,
+      formLimit: 5,
+      submissionLimit: 500,
+      createdAt: nowIso(),
+      updatedAt: nowIso()
+    },
+    {
+      id: "package-growth",
+      name: "Growth",
+      description: "Up to 25 forms, 5,000 submissions/month. Includes team dashboards.",
+      priceMonthly: 49,
+      priceAnnual: 499,
+      formLimit: 25,
+      submissionLimit: 5000,
+      createdAt: nowIso(),
+      updatedAt: nowIso()
+    },
+    {
+      id: "package-pro",
+      name: "Pro",
+      description: "Unlimited forms & submissions with priority support.",
+      priceMonthly: 99,
+      priceAnnual: 999,
+      formLimit: null,
+      submissionLimit: null,
+      createdAt: nowIso(),
+      updatedAt: nowIso()
+    }
+  ],
+  users: [
+    {
+      id: "user-owner",
+      name: "Workspace Owner",
+      email: "owner@landscape.app",
+      passwordHash: "$2b$10$0vesfnf.l89JlJ8jCSf85Os4H.VCmvLR5RNfuAoGrQV0HNNaHovD6",
+      role: "owner",
+      workspaceId: "workspace-demo",
+      createdAt: nowIso(),
+      updatedAt: nowIso()
+    }
+  ],
   submissions: []
 };
 
@@ -270,6 +319,14 @@ class Store {
       this.data.submissions = [];
       mutated = true;
     }
+    if (!Array.isArray(this.data.users)) {
+      this.data.users = deepClone(defaultData.users);
+      mutated = true;
+    }
+    if (!Array.isArray(this.data.packages)) {
+      this.data.packages = deepClone(defaultData.packages);
+      mutated = true;
+    }
 
     const existingKeys = new Set(this.data.forms.map((form) => form.shareKey).filter(Boolean));
     this.data.forms = this.data.forms.map((form) => {
@@ -304,6 +361,33 @@ class Store {
     const formLookup = new Map(this.data.forms.map((form) => [form.id, form]));
     this.data.submissions = this.data.submissions.filter((entry) => formLookup.has(entry.formId));
 
+    this.data.workspaces = this.data.workspaces.map((workspace) => {
+      const pkg = this.getPackage(workspace.packageId) ?? this.data.packages[0] ?? null;
+      return {
+        id: workspace.id ?? randomId("workspace"),
+        name: workspace.name ?? "New Workspace",
+        slug: workspace.slug ?? slugify(workspace.name ?? workspace.id),
+        ownerId: workspace.ownerId ?? this.data.users[0]?.id ?? null,
+        packageId: pkg?.id ?? null,
+        color: workspace.color ?? "#38bdf8",
+        createdAt: workspace.createdAt ?? nowIso(),
+        updatedAt: workspace.updatedAt ?? nowIso()
+      };
+    });
+
+    this.data.users = this.data.users.map((user) => {
+      return {
+        id: user.id ?? randomId("user"),
+        name: user.name ?? "User",
+        email: user.email?.toLowerCase(),
+        passwordHash: user.passwordHash ?? "",
+        role: user.role ?? "member",
+        workspaceId: user.workspaceId ?? this.data.workspaces[0]?.id ?? null,
+        createdAt: user.createdAt ?? nowIso(),
+        updatedAt: user.updatedAt ?? nowIso()
+      };
+    });
+
     if (mutated) {
       this.persist();
     }
@@ -323,6 +407,38 @@ class Store {
 
   getWorkspace(workspaceId) {
     return this.data.workspaces.find((workspace) => workspace.id === workspaceId) ?? null;
+  }
+
+  createWorkspace(payload) {
+    const now = nowIso();
+    const workspace = {
+      id: payload.id ?? randomId("workspace"),
+      name: payload.name ?? "New Workspace",
+      slug: slugify(payload.slug ?? payload.name),
+      ownerId: payload.ownerId ?? null,
+      packageId: payload.packageId ?? this.data.packages[0]?.id ?? null,
+      color: payload.color ?? "#38bdf8",
+      createdAt: now,
+      updatedAt: now
+    };
+    this.data.workspaces.push(workspace);
+    this.persist();
+    return workspace;
+  }
+
+  updateWorkspace(workspaceId, updates) {
+    const workspace = this.getWorkspace(workspaceId);
+    if (!workspace) return null;
+    const next = {
+      ...workspace,
+      ...updates,
+      slug: updates.slug ? slugify(updates.slug) : workspace.slug,
+      updatedAt: nowIso()
+    };
+    const index = this.data.workspaces.findIndex((item) => item.id === workspaceId);
+    this.data.workspaces[index] = next;
+    this.persist();
+    return next;
   }
 
   listForms({ workspaceId } = {}) {
@@ -455,6 +571,80 @@ class Store {
       this.persist();
     }
     return deleted;
+  }
+
+  listPackages() {
+    return this.data.packages;
+  }
+
+  getPackage(packageId) {
+    if (!packageId) return null;
+    return this.data.packages.find((pkg) => pkg.id === packageId) ?? null;
+  }
+
+  assignPackage(workspaceId, packageId) {
+    const workspace = this.getWorkspace(workspaceId);
+    if (!workspace) return null;
+    const pkg = this.getPackage(packageId);
+    if (!pkg) {
+      throw new Error("Package not found");
+    }
+    workspace.packageId = pkg.id;
+    workspace.updatedAt = nowIso();
+    this.persist();
+    return workspace;
+  }
+
+  listUsers() {
+    return this.data.users;
+  }
+
+  getUser(userId) {
+    return this.data.users.find((user) => user.id === userId) ?? null;
+  }
+
+  getUserByEmail(email) {
+    if (!email) return null;
+    return this.data.users.find((user) => user.email === email.toLowerCase()) ?? null;
+  }
+
+  createUser(payload) {
+    const now = nowIso();
+    const email = payload.email?.toLowerCase();
+    if (!email) {
+      throw new Error("Email is required");
+    }
+    if (this.getUserByEmail(email)) {
+      throw new Error("Email already registered");
+    }
+    const user = {
+      id: payload.id ?? randomId("user"),
+      name: payload.name ?? "User",
+      email,
+      passwordHash: payload.passwordHash ?? "",
+      role: payload.role ?? "member",
+      workspaceId: payload.workspaceId ?? null,
+      createdAt: now,
+      updatedAt: now
+    };
+    this.data.users.push(user);
+    this.persist();
+    return user;
+  }
+
+  updateUser(userId, updates) {
+    const user = this.getUser(userId);
+    if (!user) return null;
+    const next = {
+      ...user,
+      ...updates,
+      email: updates.email ? updates.email.toLowerCase() : user.email,
+      updatedAt: nowIso()
+    };
+    const index = this.data.users.findIndex((item) => item.id === userId);
+    this.data.users[index] = next;
+    this.persist();
+    return next;
   }
 }
 

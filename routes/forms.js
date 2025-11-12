@@ -35,16 +35,24 @@ function toFormResponse(form, req, options = {}) {
   return payload;
 }
 
+function ensureWorkspaceAccess(req, res, form) {
+  if (!form || form.workspaceId !== req.workspace.id) {
+    res.status(404).json({ error: "Form not found" });
+    return false;
+  }
+  return true;
+}
+
 router.get("/", (req, res) => {
-  const { workspaceId, includeStats } = req.query;
-  const forms = store.listFormsSummary({ workspaceId }).map((form) =>
+  const { includeStats } = req.query;
+  const forms = store.listFormsSummary({ workspaceId: req.workspace.id }).map((form) =>
     toFormResponse(form, req, { includeStats: includeStats !== "false" })
   );
   res.json({ data: forms });
 });
 
 router.post("/", (req, res) => {
-  const { name, description, fields, settings, workspaceId, isPublished } = req.body ?? {};
+  const { name, description, fields, settings, isPublished } = req.body ?? {};
   if (!name) {
     return res.status(400).json({ error: "Form name is required" });
   }
@@ -52,7 +60,14 @@ router.post("/", (req, res) => {
     return res.status(400).json({ error: "Fields must be an array" });
   }
   try {
-    const form = store.createForm({ name, description, fields, settings, workspaceId, isPublished });
+    const form = store.createForm({
+      name,
+      description,
+      fields,
+      settings,
+      workspaceId: req.workspace.id,
+      isPublished
+    });
     res.status(201).json({ data: toFormResponse(form, req) });
   } catch (error) {
     console.error(error);
@@ -62,8 +77,8 @@ router.post("/", (req, res) => {
 
 router.get("/:id", (req, res) => {
   const form = store.getForm(req.params.id);
-  if (!form) {
-    return res.status(404).json({ error: "Form not found" });
+  if (!ensureWorkspaceAccess(req, res, form)) {
+    return;
   }
   res.json({ data: toFormResponse(form, req) });
 });
@@ -71,8 +86,8 @@ router.get("/:id", (req, res) => {
 router.put("/:id", (req, res) => {
   try {
     const form = store.updateForm(req.params.id, req.body ?? {});
-    if (!form) {
-      return res.status(404).json({ error: "Form not found" });
+    if (!ensureWorkspaceAccess(req, res, form)) {
+      return;
     }
     res.json({ data: toFormResponse(form, req) });
   } catch (error) {
@@ -85,17 +100,18 @@ router.put("/:id", (req, res) => {
 });
 
 router.delete("/:id", (req, res) => {
-  const deleted = store.deleteForm(req.params.id);
-  if (!deleted) {
-    return res.status(404).json({ error: "Form not found" });
+  const form = store.getForm(req.params.id);
+  if (!ensureWorkspaceAccess(req, res, form)) {
+    return;
   }
+  store.deleteForm(req.params.id);
   res.status(204).end();
 });
 
 router.post("/:id/share", (req, res) => {
   const form = store.getForm(req.params.id);
-  if (!form) {
-    return res.status(404).json({ error: "Form not found" });
+  if (!ensureWorkspaceAccess(req, res, form)) {
+    return;
   }
   const shareKey = store.regenerateShareKey(form.id);
   const updated = store.getForm(form.id);
@@ -105,16 +121,16 @@ router.post("/:id/share", (req, res) => {
 router.post("/:id/publish", (req, res) => {
   const { isPublished = true } = req.body ?? {};
   const form = store.updateForm(req.params.id, { isPublished: Boolean(isPublished) });
-  if (!form) {
-    return res.status(404).json({ error: "Form not found" });
+  if (!ensureWorkspaceAccess(req, res, form)) {
+    return;
   }
   res.json({ data: toFormResponse(form, req) });
 });
 
 router.get("/:id/submissions", (req, res) => {
   const form = store.getForm(req.params.id);
-  if (!form) {
-    return res.status(404).json({ error: "Form not found" });
+  if (!ensureWorkspaceAccess(req, res, form)) {
+    return;
   }
   const submissions = store.listSubmissions(form.id);
   res.json({ data: submissions });
@@ -122,8 +138,8 @@ router.get("/:id/submissions", (req, res) => {
 
 router.post("/:id/submissions", (req, res) => {
   const form = store.getForm(req.params.id);
-  if (!form) {
-    return res.status(404).json({ error: "Form not found" });
+  if (!ensureWorkspaceAccess(req, res, form)) {
+    return;
   }
   const payload = req.body ?? {};
   const missing = (form.fields || [])
@@ -145,8 +161,8 @@ router.post("/:id/submissions", (req, res) => {
 
 router.get("/:id/export.csv", (req, res) => {
   const form = store.getForm(req.params.id);
-  if (!form) {
-    return res.status(404).json({ error: "Form not found" });
+  if (!ensureWorkspaceAccess(req, res, form)) {
+    return;
   }
   const submissions = store.listSubmissions(form.id);
   const metaHeaders = [];
