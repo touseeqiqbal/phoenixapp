@@ -1,0 +1,908 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>React Form Builder</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                DEFAULT: "#38bdf8",
+                soft: "#0f172a"
+              }
+            },
+            fontFamily: {
+              sans: ["Inter", "ui-sans-serif", "system-ui"]
+            },
+            boxShadow: {
+              elevated: "0 25px 50px -20px rgba(15, 23, 42, 0.45)"
+            }
+          }
+        }
+      };
+    </script>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    />
+  </head>
+  <body class="bg-slate-950 text-slate-100 font-sans min-h-screen">
+    <div id="root" class="min-h-screen"></div>
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/react-dnd@16.0.1/dist/ReactDnD.min.js"></script>
+    <script src="https://unpkg.com/react-dnd-html5-backend@16.0.1/dist/ReactDnDHTML5Backend.min.js"></script>
+    <script src="https://unpkg.com/@chakra-ui/icons@2.0.17/dist/cjs/index.umd.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+      const { useState, useMemo, useCallback, useRef } = React;
+      const { createRoot } = ReactDOM;
+      const { DndProvider, useDrag, useDrop } = ReactDnD;
+      const { HTML5Backend } = ReactDnDHTML5Backend;
+
+      const ItemTypes = {
+        TOOLBOX: "TOOLBOX_FIELD",
+        FIELD: "FORM_FIELD"
+      };
+
+      const fieldCatalog = [
+        {
+          title: "Basics",
+          description: "The essentials for fast capture.",
+          items: [
+            {
+              type: "name",
+              label: "Name",
+              placeholder: "Full name",
+              icon: "👤"
+            },
+            {
+              type: "email",
+              label: "Email",
+              placeholder: "name@example.com",
+              icon: "✉️"
+            },
+            {
+              type: "phone",
+              label: "Phone",
+              placeholder: "(555) 000-0000",
+              icon: "📞"
+            },
+            {
+              type: "text",
+              label: "Text Input",
+              placeholder: "Type response...",
+              icon: "🔤"
+            },
+            {
+              type: "textarea",
+              label: "Paragraph",
+              placeholder: "Add detailed notes...",
+              icon: "📝"
+            }
+          ]
+        },
+        {
+          title: "Choices",
+          description: "Collect structured answers.",
+          items: [
+            {
+              type: "select",
+              label: "Dropdown",
+              placeholder: "Pick an option",
+              options: ["Option A", "Option B", "Option C"],
+              icon: "⬇️"
+            },
+            {
+              type: "checkbox",
+              label: "Checkbox",
+              placeholder: "",
+              icon: "☑️"
+            },
+            {
+              type: "radio",
+              label: "Single Choice",
+              placeholder: "",
+              options: ["Choice 1", "Choice 2"],
+              icon: "🔘"
+            }
+          ]
+        },
+        {
+          title: "Scheduling",
+          description: "Capture dates and timing.",
+          items: [
+            {
+              type: "date",
+              label: "Date",
+              placeholder: "",
+              icon: "📅"
+            },
+            {
+              type: "time",
+              label: "Time",
+              placeholder: "",
+              icon: "⏰"
+            }
+          ]
+        },
+        {
+          title: "Advanced",
+          description: "Power and automation fields.",
+          items: [
+            {
+              type: "number",
+              label: "Number",
+              placeholder: "0",
+              icon: "#️⃣"
+            },
+            {
+              type: "signature",
+              label: "Signature",
+              placeholder: "",
+              icon: "✍️"
+            },
+            {
+              type: "file",
+              label: "File Upload",
+              placeholder: "",
+              icon: "📁"
+            }
+          ]
+        }
+      ];
+
+      const blueprintIndex = Object.fromEntries(
+        fieldCatalog.flatMap((group) =>
+          group.items.map((item) => [
+            item.type,
+            {
+              ...item,
+              options: item.options ? [...item.options] : undefined
+            }
+          ])
+        )
+      );
+
+      function createFieldFromBlueprint(blueprint) {
+        const base = blueprint || blueprintIndex.text;
+        return {
+          id: `field-${Math.random().toString(36).slice(2, 10)}`,
+          type: base.type,
+          label: base.label,
+          placeholder: base.placeholder ?? "",
+          options: base.options ? [...base.options] : [],
+          required: false
+        };
+      }
+
+      function Tabs({ tabs, activeTab, onChange }) {
+        return (
+          <div className="flex flex-wrap gap-3">
+            {tabs.map((tab) => {
+              const isActive = tab.id === activeTab;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => onChange(tab.id)}
+                  className={[
+                    "px-5 py-2.5 rounded-full text-sm font-semibold transition",
+                    isActive
+                      ? "bg-brand text-slate-900 shadow-lg shadow-brand/30"
+                      : "bg-slate-900/60 text-slate-300 hover:bg-slate-900"
+                  ].join(" ")}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        );
+      }
+
+      function ToolboxItem({ blueprint }) {
+        const [{ isDragging }, drag] = useDrag(
+          () => ({
+            type: ItemTypes.TOOLBOX,
+            item: { blueprint },
+            collect: (monitor) => ({
+              isDragging: monitor.isDragging()
+            })
+          }),
+          [blueprint]
+        );
+
+        return (
+          <div
+            ref={drag}
+            className={[
+              "rounded-xl border border-slate-700/60 bg-slate-900/80 p-4 cursor-grab transition hover:-translate-y-1",
+              isDragging ? "opacity-40" : "opacity-100"
+            ].join(" ")}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-xl">{blueprint.icon}</span>
+              <div>
+                <h4 className="font-semibold text-sm">{blueprint.label}</h4>
+                <p className="text-xs text-slate-400">
+                  Drag into the preview
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      function FieldToolbox() {
+        return (
+          <aside className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Field Toolbox</h3>
+              <p className="text-sm text-slate-400">
+                Drag a field onto the canvas to add it to your form.
+              </p>
+            </div>
+            <div className="space-y-5">
+              {fieldCatalog.map((section) => (
+                <div
+                  key={section.title}
+                  className="rounded-2xl border border-slate-800 bg-slate-900/40 backdrop-blur p-4 space-y-3"
+                >
+                  <div>
+                    <h4 className="font-semibold text-slate-100 flex justify-between items-center text-sm uppercase tracking-wide">
+                      {section.title}
+                      <span className="text-xs text-brand/90 bg-brand/10 px-2 py-0.5 rounded-full">
+                        {section.items.length}
+                      </span>
+                    </h4>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {section.description}
+                    </p>
+                  </div>
+                  <div className="grid gap-3">
+                    {section.items.map((item) => (
+                      <ToolboxItem key={item.type} blueprint={item} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </aside>
+        );
+      }
+
+      function FieldPreviewControl({ field }) {
+        const baseClasses =
+          "w-full rounded-lg border border-slate-700/60 bg-slate-900/60 px-3 py-2 text-sm text-slate-100";
+
+        switch (field.type) {
+          case "textarea":
+            return (
+              <textarea
+                disabled
+                placeholder={field.placeholder}
+                rows={3}
+                className={baseClasses}
+              />
+            );
+          case "select":
+            return (
+              <select disabled className={baseClasses}>
+                <option>{field.placeholder || "Select option"}</option>
+                {(field.options ?? ["Option 1", "Option 2"]).map((option) => (
+                  <option key={option}>{option}</option>
+                ))}
+              </select>
+            );
+          case "radio":
+            return (
+              <div className="space-y-2">
+                {(field.options ?? ["Choice A", "Choice B"]).map((option) => (
+                  <label key={option} className="flex items-center gap-2 text-sm">
+                    <input type="radio" disabled className="text-brand" />
+                    <span className="text-slate-300">{option}</span>
+                  </label>
+                ))}
+              </div>
+            );
+          case "checkbox":
+            return (
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" disabled className="text-brand" />
+                <span className="text-slate-300">{field.label}</span>
+              </label>
+            );
+          case "signature":
+            return (
+              <div className="border border-dashed border-slate-700 rounded-lg h-24 flex items-center justify-center text-sm text-slate-400">
+                Signature pad placeholder
+              </div>
+            );
+          case "file":
+            return (
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  disabled
+                  className="rounded-lg border border-slate-700/60 bg-slate-900/60 px-3 py-2 text-sm text-slate-300"
+                >
+                  Upload File
+                </button>
+                <span className="text-xs text-slate-500">
+                  (drag & drop disabled in preview)
+                </span>
+              </div>
+            );
+          case "date":
+          case "time":
+          case "number":
+          case "email":
+          case "phone":
+          case "name":
+          case "text":
+          default:
+            return (
+              <input
+                disabled
+                type={
+                  field.type === "phone"
+                    ? "tel"
+                    : field.type === "name"
+                    ? "text"
+                    : field.type === "radio"
+                    ? "text"
+                    : field.type
+                }
+                placeholder={
+                  field.placeholder || `Enter ${field.label.toLowerCase()}`
+                }
+                className={baseClasses}
+              />
+            );
+        }
+      }
+
+      function FieldItem({
+        field,
+        index,
+        isSelected,
+        onSelect,
+        onRemove,
+        moveField
+      }) {
+        const ref = useRef(null);
+
+        const [, drop] = useDrop({
+          accept: ItemTypes.FIELD,
+          hover(item, monitor) {
+            if (item.type !== ItemTypes.FIELD) return;
+            if (!ref.current) return;
+            const dragIndex = item.index;
+            const hoverIndex = index;
+            if (dragIndex === hoverIndex) return;
+            const hoverRect = ref.current.getBoundingClientRect();
+            const hoverMiddleY = (hoverRect.bottom - hoverRect.top) / 2;
+            const clientOffset = monitor.getClientOffset();
+            const hoverClientY = clientOffset.y - hoverRect.top;
+            if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) return;
+            if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) return;
+            moveField(dragIndex, hoverIndex);
+            item.index = hoverIndex;
+          }
+        });
+
+        const [{ isDragging }, drag] = useDrag({
+          type: ItemTypes.FIELD,
+          item: { type: ItemTypes.FIELD, id: field.id, index },
+          collect: (monitor) => ({
+            isDragging: monitor.isDragging()
+          })
+        });
+
+        drag(drop(ref));
+
+        return (
+          <div
+            ref={ref}
+            onClick={() => onSelect(field.id)}
+            className={[
+              "rounded-xl border backdrop-blur px-4 py-3 space-y-2 transition cursor-pointer",
+              isSelected
+                ? "border-brand bg-brand/10"
+                : "border-slate-800 bg-slate-900/60 hover:border-slate-700",
+              isDragging ? "opacity-50" : "opacity-100"
+            ].join(" ")}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h4 className="text-sm font-semibold text-slate-100">
+                  {field.label || "Untitled field"}
+                </h4>
+                <p className="text-xs text-slate-400 uppercase tracking-wide">
+                  {field.type}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-500 select-none">
+                  Drag
+                </span>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onRemove(field.id);
+                  }}
+                  className="text-xs text-rose-400 hover:text-rose-300"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+            <FieldPreviewControl field={field} />
+          </div>
+        );
+      }
+
+      function FieldEditor({ field, onUpdate }) {
+        const typeOptions = useMemo(
+          () =>
+            Object.values(blueprintIndex).map((blueprint) => ({
+              value: blueprint.type,
+              label: blueprint.label
+            })),
+          []
+        );
+
+        if (!field) {
+          return (
+            <div className="rounded-2xl border border-dashed border-slate-700/80 bg-slate-900/40 px-6 py-8 text-center text-sm text-slate-400">
+              Select a field in the preview to edit its settings.
+            </div>
+          );
+        }
+
+        const handleChange = (key, value) => {
+          onUpdate({
+            ...field,
+            [key]: value
+          });
+        };
+
+        const handleTypeChange = (nextType) => {
+          const defaults = blueprintIndex[nextType] || {};
+          onUpdate({
+            ...field,
+            type: nextType,
+            placeholder:
+              field.placeholder || defaults.placeholder || "Untitled field",
+            options: defaults.options ? [...defaults.options] : []
+          });
+        };
+
+        return (
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wide">
+                Field Label
+              </label>
+              <input
+                type="text"
+                value={field.label}
+                onChange={(event) => handleChange("label", event.target.value)}
+                className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm focus:border-brand/60 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wide">
+                Placeholder
+              </label>
+              <input
+                type="text"
+                value={field.placeholder}
+                onChange={(event) =>
+                  handleChange("placeholder", event.target.value)
+                }
+                className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm focus:border-brand/60 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wide">
+                Field Type
+              </label>
+              <select
+                value={field.type}
+                onChange={(event) => handleTypeChange(event.target.value)}
+                className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm focus:border-brand/60 focus:outline-none"
+              >
+                {typeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                id={`required-${field.id}`}
+                type="checkbox"
+                checked={field.required}
+                onChange={(event) =>
+                  handleChange("required", event.target.checked)
+                }
+                className="text-brand"
+              />
+              <label
+                htmlFor={`required-${field.id}`}
+                className="text-sm text-slate-300"
+              >
+                Required field
+              </label>
+            </div>
+          </div>
+        );
+      }
+
+      function FieldsCanvas({
+        fields,
+        addField,
+        moveField,
+        removeField,
+        selectField,
+        selectedFieldId,
+        updateField
+      }) {
+        const [{ isOver, canDrop }, drop] = useDrop({
+          accept: ItemTypes.TOOLBOX,
+          drop: (item) => addField(item.blueprint),
+          collect: (monitor) => ({
+            isOver: monitor.isOver(),
+            canDrop: monitor.canDrop()
+          })
+        });
+
+        const selectedField = fields.find(
+          (field) => field.id === selectedFieldId
+        );
+
+        return (
+          <div className="space-y-6">
+            <section className="rounded-3xl border border-slate-800 bg-slate-900/40 backdrop-blur p-6 shadow-elevated">
+              <header className="mb-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-semibold text-slate-100">
+                    Live Preview
+                  </h3>
+                  <p className="text-sm text-slate-400">
+                    Drag fields here, then click to edit their settings.
+                  </p>
+                </div>
+                <span className="rounded-full border border-slate-800 bg-slate-900 px-3 py-1 text-xs text-slate-400">
+                  {fields.length} fields
+                </span>
+              </header>
+              <div
+                ref={drop}
+                className={[
+                  "min-h-[280px] rounded-2xl border-2 border-dashed px-4 py-6 transition",
+                  isOver && canDrop
+                    ? "border-brand/60 bg-brand/5"
+                    : "border-slate-800 bg-slate-900/40"
+                ].join(" ")}
+              >
+                {fields.length === 0 ? (
+                  <div className="flex h-full items-center justify-center text-sm text-slate-500">
+                    Drag fields from the toolbox to get started.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {fields.map((field, index) => (
+                      <FieldItem
+                        key={field.id}
+                        field={field}
+                        index={index}
+                        moveField={moveField}
+                        onSelect={selectField}
+                        onRemove={removeField}
+                        isSelected={field.id === selectedFieldId}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-slate-800 bg-slate-900/40 backdrop-blur p-6">
+              <h3 className="text-lg font-semibold text-slate-100 mb-4">
+                Field Settings
+              </h3>
+              <FieldEditor
+                field={selectedField}
+                onUpdate={(updated) => updateField(updated)}
+              />
+            </section>
+          </div>
+        );
+      }
+
+      function BasicDetails({ details, onChange }) {
+        const handleChange = (key, value) => {
+          onChange({
+            ...details,
+            [key]: value
+          });
+        };
+
+        return (
+          <section className="space-y-6">
+            <div className="rounded-3xl border border-slate-800 bg-slate-900/40 backdrop-blur p-6 shadow-elevated">
+              <header className="mb-6 space-y-2">
+                <h3 className="text-xl font-semibold text-slate-100">
+                  Basic Details
+                </h3>
+                <p className="text-sm text-slate-400">
+                  Set the fundamentals before you publish a template.
+                </p>
+              </header>
+              <div className="grid gap-5 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Form Title
+                  </label>
+                  <input
+                    value={details.title}
+                    onChange={(event) =>
+                      handleChange("title", event.target.value)
+                    }
+                    placeholder="Daily Landscaping Report"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-2.5 text-sm text-slate-100 focus:border-brand/60 focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Workspace
+                  </label>
+                  <input
+                    value={details.workspace}
+                    onChange={(event) =>
+                      handleChange("workspace", event.target.value)
+                    }
+                    placeholder="Northwest Crew"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-2.5 text-sm text-slate-100 focus:border-brand/60 focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Description
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={details.description}
+                    onChange={(event) =>
+                      handleChange("description", event.target.value)
+                    }
+                    placeholder="Explain when and how the crew should use this form. Mention attachments or mandatory photos."
+                    className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3 text-sm text-slate-100 focus:border-brand/60 focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Category
+                  </label>
+                  <select
+                    value={details.category}
+                    onChange={(event) =>
+                      handleChange("category", event.target.value)
+                    }
+                    className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-2.5 text-sm text-slate-100 focus:border-brand/60 focus:outline-none"
+                  >
+                    <option value="operations">Operations</option>
+                    <option value="safety">Safety</option>
+                    <option value="onboarding">Onboarding</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Version Tag
+                  </label>
+                  <input
+                    value={details.version}
+                    onChange={(event) =>
+                      handleChange("version", event.target.value)
+                    }
+                    placeholder="v1.0.0"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-2.5 text-sm text-slate-100 focus:border-brand/60 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="rounded-3xl border border-slate-800 bg-slate-900/40 backdrop-blur p-6">
+              <h4 className="text-sm font-semibold text-slate-200 uppercase tracking-wide mb-3">
+                Internal Notes
+              </h4>
+              <p className="text-sm text-slate-400">
+                Document how this form ties into downstream automations, exports,
+                or billing. Crew members never see this section.
+              </p>
+            </div>
+          </section>
+        );
+      }
+
+      function PlaceholderPanel({ title, message }) {
+        return (
+          <section className="rounded-3xl border border-slate-800 bg-slate-900/40 backdrop-blur p-10 text-center shadow-elevated">
+            <h3 className="text-xl font-semibold text-slate-100 mb-3">
+              {title}
+            </h3>
+            <p className="text-sm text-slate-400 max-w-lg mx-auto">
+              {message}
+            </p>
+          </section>
+        );
+      }
+
+      function ScriptsPanel({ scripts, onChange }) {
+        return (
+          <section className="rounded-3xl border border-slate-800 bg-slate-900/40 backdrop-blur p-6 shadow-elevated space-y-4">
+            <div>
+              <h3 className="text-xl font-semibold text-slate-100">
+                Custom Scripts
+              </h3>
+              <p className="text-sm text-slate-400">
+                Inject custom JavaScript to push data to third-party services once
+                submissions are saved. Runs after validation.
+              </p>
+            </div>
+            <textarea
+              value={scripts}
+              onChange={(event) => onChange(event.target.value)}
+              placeholder="// Write post-submit script..."
+              rows={14}
+              className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-sm font-mono text-slate-200 focus:border-brand/60 focus:outline-none"
+            />
+            <div className="flex items-center justify-between text-xs text-slate-500">
+              <span>
+                Tip: Use <code className="px-2 py-1 bg-slate-900 rounded">onSubmitSuccess</code> hook.
+              </span>
+              <button
+                type="button"
+                className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-300 hover:border-brand/50 hover:text-brand"
+              >
+                View script API
+              </button>
+            </div>
+          </section>
+        );
+      }
+
+      function App() {
+        const [activeTab, setActiveTab] = useState("fields");
+        const [fields, setFields] = useState([]);
+        const [selectedFieldId, setSelectedFieldId] = useState(null);
+        const [formDetails, setFormDetails] = useState({
+          title: "",
+          description: "",
+          workspace: "",
+          category: "operations",
+          version: "v1.0.0"
+        });
+        const [scripts, setScripts] = useState("");
+
+        const addField = useCallback((blueprint) => {
+          setFields((prev) => {
+            const newField = createFieldFromBlueprint(blueprint);
+            setSelectedFieldId(newField.id);
+            return [...prev, newField];
+          });
+        }, []);
+
+        const moveField = useCallback((fromIndex, toIndex) => {
+          setFields((prev) => {
+            const updated = [...prev];
+            const [moved] = updated.splice(fromIndex, 1);
+            updated.splice(toIndex, 0, moved);
+            return updated;
+          });
+        }, []);
+
+        const removeField = useCallback((fieldId) => {
+          setFields((prev) => prev.filter((field) => field.id !== fieldId));
+          setSelectedFieldId((current) =>
+            current === fieldId ? null : current
+          );
+        }, []);
+
+        const updateField = useCallback((nextField) => {
+          setFields((prev) =>
+            prev.map((field) =>
+              field.id === nextField.id ? { ...field, ...nextField } : field
+            )
+          );
+        }, []);
+
+        const selectField = useCallback((fieldId) => {
+          setSelectedFieldId(fieldId);
+        }, []);
+
+        const tabs = useMemo(
+          () => [
+            { id: "basic", label: "Basic Details" },
+            { id: "fields", label: "Fields" },
+            { id: "rules", label: "Rules" },
+            { id: "scripts", label: "Scripts" }
+          ],
+          []
+        );
+
+        return (
+          <DndProvider backend={HTML5Backend}>
+            <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-930 to-slate-950">
+              <header className="border-b border-slate-900/80 bg-gradient-to-r from-slate-950/90 via-slate-900/70 to-slate-950/90 backdrop-blur">
+                <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-8 lg:px-10">
+                  <div className="flex flex-col gap-3">
+                    <div className="inline-flex w-fit items-center gap-3 rounded-full border border-slate-800 bg-slate-900/70 px-3 py-1 text-xs text-slate-400">
+                      <span className="h-2 w-2 rounded-full bg-brand"></span>
+                      Form Builder Workspace
+                    </div>
+                    <h1 className="text-3xl font-bold text-white lg:text-4xl">
+                      Drag-and-drop Form Builder
+                    </h1>
+                    <p className="text-base text-slate-400 max-w-3xl">
+                      Design modern forms, orchestrate business rules, and plug in
+                      custom scripts — all from a single canvas.
+                    </p>
+                  </div>
+                  <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+                </div>
+              </header>
+
+              <main className="mx-auto grid max-w-6xl gap-8 px-6 py-10 lg:px-10 xl:grid-cols-[minmax(0,3fr)_minmax(0,1.2fr)]">
+                <section className="space-y-6">
+                  {activeTab === "basic" && (
+                    <BasicDetails
+                      details={formDetails}
+                      onChange={setFormDetails}
+                    />
+                  )}
+                  {activeTab === "fields" && (
+                    <FieldsCanvas
+                      fields={fields}
+                      addField={addField}
+                      moveField={moveField}
+                      removeField={removeField}
+                      selectField={selectField}
+                      selectedFieldId={selectedFieldId}
+                      updateField={updateField}
+                    />
+                  )}
+                  {activeTab === "rules" && (
+                    <PlaceholderPanel
+                      title="Rules Builder"
+                      message="Define conditional logic, branching, and automation in this workspace. Assign rules to fields, control visibility, and trigger downstream actions."
+                    />
+                  )}
+                  {activeTab === "scripts" && (
+                    <ScriptsPanel scripts={scripts} onChange={setScripts} />
+                  )}
+                </section>
+                <FieldToolbox key={activeTab} />
+              </main>
+            </div>
+          </DndProvider>
+        );
+      }
+
+      const root = createRoot(document.getElementById("root"));
+      root.render(<App />);
+    </script>
+  </body>
+</html>
