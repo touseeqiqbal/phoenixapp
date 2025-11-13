@@ -58,6 +58,62 @@ function uniqueShareKey(existing) {
 
 const nowIso = () => new Date().toISOString();
 
+const FILE_FIELD_TYPES = new Set(["file", "image-upload"]);
+
+function normalizeFieldRecord(field) {
+  if (!field || typeof field !== "object") {
+    return { field, changed: false };
+  }
+  let changed = false;
+  const next = { ...field };
+  if (next.type === "image") {
+    if (typeof next.imageUrl !== "string") {
+      next.imageUrl = "";
+      changed = true;
+    }
+    if (next.displayOnly !== true) {
+      next.displayOnly = true;
+      changed = true;
+    }
+    if (next.required) {
+      next.required = false;
+      changed = true;
+    }
+  }
+  if (FILE_FIELD_TYPES.has(next.type)) {
+    let accepts = next.accepts;
+    if (typeof accepts === "string") {
+      accepts = accepts
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean);
+      changed = true;
+    }
+    if (!Array.isArray(accepts)) {
+      accepts = [];
+      changed = true;
+    }
+    if (!accepts.length && next.type === "image-upload") {
+      accepts = ["image/png", "image/jpeg", "image/webp"];
+      changed = true;
+    }
+    const acceptsMismatch =
+      !Array.isArray(next.accepts) ||
+      next.accepts.length !== accepts.length ||
+      next.accepts.some((value, index) => value !== accepts[index]);
+    if (acceptsMismatch) {
+      next.accepts = accepts;
+      changed = true;
+    }
+    const multiple = Boolean(next.multiple);
+    if (next.multiple !== multiple) {
+      next.multiple = multiple;
+      changed = true;
+    }
+  }
+  return { field: next, changed };
+}
+
 function defaultFormSettings() {
   return {
     allowCsvExport: true,
@@ -387,6 +443,18 @@ class Store {
           createdAt: form.createdAt ?? nowIso(),
           updatedAt: form.updatedAt ?? nowIso()
         };
+        if (!Array.isArray(normalized.fields)) {
+          normalized.fields = [];
+          mutated = true;
+        } else {
+          normalized.fields = normalized.fields.map((field) => {
+            const { field: normalizedField, changed } = normalizeFieldRecord(field);
+            if (changed) {
+              mutated = true;
+            }
+            return normalizedField;
+          });
+        }
         if (!existingKeys.has(normalized.shareKey)) {
           existingKeys.add(normalized.shareKey);
         }
@@ -525,11 +593,14 @@ class Store {
         isPublished: payload.isPublished ?? false,
         visibility: payload.visibility === "private" ? "private" : "public",
       shareKey: uniqueShareKey(this.data.forms.map((item) => item.shareKey)),
-      fields: Array.isArray(payload.fields) ? payload.fields : [],
+    fields: Array.isArray(payload.fields) ? payload.fields : [],
         settings: mergeSettings(payload.settings),
       createdAt: now,
       updatedAt: now
     };
+      form.fields = form.fields
+        .map((field) => normalizeFieldRecord(field).field)
+        .filter(Boolean);
     this.data.forms.push(form);
     this.persist();
     return form;
@@ -548,7 +619,15 @@ class Store {
             ? "private"
             : "public"
           : form.visibility ?? "public";
-      const next = {
+    if (updates.fields && !Array.isArray(updates.fields)) {
+      throw new Error("Fields must be an array");
+    }
+      if (Array.isArray(updates.fields)) {
+        updates.fields = updates.fields
+          .map((field) => normalizeFieldRecord(field).field)
+          .filter(Boolean);
+      }
+    const next = {
       ...form,
       ...updates,
         settings: nextSettings,
@@ -557,9 +636,6 @@ class Store {
       updatedAt: nowIso(),
       version: (form.version ?? 1) + 1
     };
-    if (updates.fields && !Array.isArray(updates.fields)) {
-      throw new Error("Fields must be an array");
-    }
     const index = this.data.forms.findIndex((item) => item.id === formId);
     this.data.forms[index] = next;
     this.persist();

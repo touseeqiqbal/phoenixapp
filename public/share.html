@@ -131,7 +131,7 @@
           border-top: 1px dashed rgba(148, 163, 184, 0.25);
           margin: 0.75rem 0;
         }
-      .checkbox-grid {
+        .checkbox-grid {
         display: grid;
         gap: 0.45rem;
         grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -177,7 +177,13 @@
         cursor: pointer;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
       }
-      button:hover {
+        .static-block img {
+          max-width: 100%;
+          border-radius: 14px;
+          border: 1px solid rgba(148, 163, 184, 0.22);
+          background: rgba(8, 13, 24, 0.55);
+        }
+        button:hover {
         transform: translateY(-1px);
         box-shadow: 0 18px 32px -18px rgba(56, 189, 248, 0.55);
       }
@@ -304,7 +310,7 @@
         }
       }
 
-        function renderStaticField(field) {
+          function renderStaticField(field) {
           if (field.type === "divider") {
             const divider = document.createElement("hr");
             divider.className = "static-divider";
@@ -312,8 +318,8 @@
           }
           const block = document.createElement("div");
           block.className = "static-block";
-          const heading = document.createElement("h3");
-          heading.textContent = field.label || "Section";
+            const heading = document.createElement("h3");
+            heading.textContent = field.label || "Section";
           switch (field.type) {
             case "heading":
               heading.textContent = field.label || "Section";
@@ -332,11 +338,25 @@
               break;
             }
             case "image": {
-              block.appendChild(heading);
-              const paragraph = document.createElement("p");
-              paragraph.textContent =
-                field.placeholder || "Image block – upload support coming soon.";
-              block.appendChild(paragraph);
+                if (field.label) {
+                  block.appendChild(heading);
+                }
+                if (field.imageUrl) {
+                  const image = document.createElement("img");
+                  image.src = field.imageUrl;
+                  image.alt = field.label || "Form image";
+                  block.appendChild(image);
+                    if (field.placeholder) {
+                      const caption = document.createElement("p");
+                      caption.textContent = field.placeholder;
+                      block.appendChild(caption);
+                    }
+                  } else {
+                    const placeholder = document.createElement("p");
+                    placeholder.textContent =
+                      field.placeholder || "Add an image in the builder to show it here.";
+                    block.appendChild(placeholder);
+                  }
               break;
             }
             default:
@@ -487,6 +507,21 @@
               if (field.required && control instanceof HTMLTextAreaElement) control.required = true;
               wrapper.appendChild(control);
             }
+              if (FILE_FIELD_TYPES.has(field.type)) {
+                if (Array.isArray(field.accepts) && field.accepts.length) {
+                  const acceptMeta = document.createElement("span");
+                  acceptMeta.className = "meta";
+                  acceptMeta.textContent = `Allowed: ${field.accepts.join(", ")}`;
+                  wrapper.appendChild(acceptMeta);
+                }
+                if (field.multiple) {
+                  const multipleMeta = document.createElement("span");
+                  multipleMeta.className = "meta";
+                  multipleMeta.textContent =
+                    field.type === "image-upload" ? "Allows multiple images" : "Allows multiple files";
+                  wrapper.appendChild(multipleMeta);
+                }
+              }
             formEl.appendChild(wrapper);
           });
 
