@@ -42,7 +42,7 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <script type="text/babel">
-      const { useState, useMemo, useCallback, useRef } = React;
+      const { useState, useMemo, useCallback, useRef, useEffect } = React;
       const { createRoot } = ReactDOM;
       const { DndProvider, useDrag, useDrop } = ReactDnD;
       const { HTML5Backend } = ReactDnDHTML5Backend;
@@ -54,13 +54,13 @@
 
       const fieldCatalog = [
         {
-          title: "Basics",
-          description: "The essentials for fast capture.",
+          title: "Basic",
+          description: "Core elements for fast data capture.",
           items: [
             {
               type: "name",
-              label: "Name",
-              placeholder: "Full name",
+              label: "Full Name",
+              placeholder: "First and last name",
               icon: "👤"
             },
             {
@@ -71,28 +71,22 @@
             },
             {
               type: "phone",
-              label: "Phone",
+              label: "Phone Number",
               placeholder: "(555) 000-0000",
               icon: "📞"
             },
             {
               type: "text",
-              label: "Text Input",
+              label: "Short Text",
               placeholder: "Type response...",
               icon: "🔤"
             },
             {
               type: "textarea",
-              label: "Paragraph",
+              label: "Long Text",
               placeholder: "Add detailed notes...",
               icon: "📝"
-            }
-          ]
-        },
-        {
-          title: "Choices",
-          description: "Collect structured answers.",
-          items: [
+            },
             {
               type: "select",
               label: "Dropdown",
@@ -112,13 +106,7 @@
               placeholder: "",
               options: ["Choice 1", "Choice 2"],
               icon: "🔘"
-            }
-          ]
-        },
-        {
-          title: "Scheduling",
-          description: "Capture dates and timing.",
-          items: [
+            },
             {
               type: "date",
               label: "Date",
@@ -134,15 +122,40 @@
           ]
         },
         {
-          title: "Advanced",
-          description: "Power and automation fields.",
+          title: "Payments",
+          description: "Collect billing and purchase details.",
           items: [
             {
-              type: "number",
-              label: "Number",
-              placeholder: "0",
-              icon: "#️⃣"
+              type: "payment-amount",
+              label: "Payment Amount",
+              placeholder: "$0.00",
+              icon: "💵"
             },
+            {
+              type: "card-number",
+              label: "Card Number",
+              placeholder: "XXXX XXXX XXXX XXXX",
+              icon: "💳"
+            },
+            {
+              type: "billing-address",
+              label: "Billing Address",
+              placeholder: "Street, City, State",
+              icon: "🏠"
+            },
+            {
+              type: "product-list",
+              label: "Product List",
+              placeholder: "",
+              icon: "🛒",
+              options: ["Product A", "Product B"]
+            }
+          ]
+        },
+        {
+          title: "Widgets",
+          description: "Enhance forms with media and utilities.",
+          items: [
             {
               type: "signature",
               label: "Signature",
@@ -154,6 +167,19 @@
               label: "File Upload",
               placeholder: "",
               icon: "📁"
+            },
+            {
+              type: "image",
+              label: "Image Block",
+              placeholder: "Add supporting imagery",
+              icon: "🖼️"
+            },
+            {
+              type: "rating",
+              label: "Rating",
+              placeholder: "",
+              icon: "⭐",
+              options: ["1", "2", "3", "4", "5"]
             }
           ]
         }
@@ -284,6 +310,61 @@
           "w-full rounded-lg border border-slate-700/60 bg-slate-900/60 px-3 py-2 text-sm text-slate-100";
 
         switch (field.type) {
+          case "image":
+            return (
+              <div className="flex items-center justify-center rounded-lg border border-dashed border-slate-700 bg-slate-900/60 px-4 py-6 text-sm text-slate-400">
+                Image block preview
+              </div>
+            );
+          case "payment-amount":
+            return (
+              <input
+                disabled
+                type="number"
+                placeholder={field.placeholder || "$0.00"}
+                className={baseClasses}
+              />
+            );
+          case "card-number":
+            return (
+              <input
+                disabled
+                type="text"
+                inputMode="numeric"
+                placeholder={field.placeholder || "XXXX XXXX XXXX XXXX"}
+                className={baseClasses}
+              />
+            );
+          case "billing-address":
+            return (
+              <textarea
+                disabled
+                rows={3}
+                placeholder={field.placeholder || "Billing address"}
+                className={baseClasses}
+              />
+            );
+          case "product-list":
+            return (
+              <div className="space-y-2">
+                {(field.options ?? ["Product A", "Product B"]).map((product) => (
+                  <label key={product} className="flex items-center justify-between rounded-lg border border-slate-700/60 bg-slate-900/60 px-3 py-2 text-sm text-slate-300">
+                    <span>{product}</span>
+                    <input type="checkbox" disabled className="text-brand" />
+                  </label>
+                ))}
+              </div>
+            );
+          case "rating":
+            return (
+              <div className="flex items-center gap-1 text-brand">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <span key={star} aria-hidden="true">
+                    ⭐
+                  </span>
+                ))}
+              </div>
+            );
           case "textarea":
             return (
               <textarea
@@ -556,8 +637,7 @@
         moveField,
         removeField,
         selectField,
-        selectedFieldId,
-        updateField
+        selectedFieldId
       }) {
         const [{ isOver, canDrop }, drop] = useDrop({
           accept: ItemTypes.TOOLBOX,
@@ -568,67 +648,51 @@
           })
         });
 
-        const selectedField = fields.find(
-          (field) => field.id === selectedFieldId
-        );
-
         return (
-          <div className="space-y-6">
-            <section className="rounded-3xl border border-slate-800 bg-slate-900/40 backdrop-blur p-6 shadow-elevated">
-              <header className="mb-4 flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-semibold text-slate-100">
-                    Live Preview
-                  </h3>
-                  <p className="text-sm text-slate-400">
-                    Drag fields here, then click to edit their settings.
-                  </p>
-                </div>
-                <span className="rounded-full border border-slate-800 bg-slate-900 px-3 py-1 text-xs text-slate-400">
-                  {fields.length} fields
-                </span>
-              </header>
-              <div
-                ref={drop}
-                className={[
-                  "min-h-[280px] rounded-2xl border-2 border-dashed px-4 py-6 transition",
-                  isOver && canDrop
-                    ? "border-brand/60 bg-brand/5"
-                    : "border-slate-800 bg-slate-900/40"
-                ].join(" ")}
-              >
-                {fields.length === 0 ? (
-                  <div className="flex h-full items-center justify-center text-sm text-slate-500">
-                    Drag fields from the toolbox to get started.
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {fields.map((field, index) => (
-                      <FieldItem
-                        key={field.id}
-                        field={field}
-                        index={index}
-                        moveField={moveField}
-                        onSelect={selectField}
-                        onRemove={removeField}
-                        isSelected={field.id === selectedFieldId}
-                      />
-                    ))}
-                  </div>
-                )}
+          <section className="rounded-3xl border border-slate-800 bg-slate-900/40 backdrop-blur p-6 shadow-elevated">
+            <header className="mb-4 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-semibold text-slate-100">
+                  Form Canvas
+                </h3>
+                <p className="text-sm text-slate-400">
+                  Drag fields here, then click to edit their settings.
+                </p>
               </div>
-            </section>
-
-            <section className="rounded-3xl border border-slate-800 bg-slate-900/40 backdrop-blur p-6">
-              <h3 className="text-lg font-semibold text-slate-100 mb-4">
-                Field Settings
-              </h3>
-              <FieldEditor
-                field={selectedField}
-                onUpdate={(updated) => updateField(updated)}
-              />
-            </section>
-          </div>
+              <span className="rounded-full border border-slate-800 bg-slate-900 px-3 py-1 text-xs text-slate-400">
+                {fields.length} fields
+              </span>
+            </header>
+            <div
+              ref={drop}
+              className={[
+                "min-h-[320px] rounded-2xl border-2 border-dashed px-4 py-6 transition",
+                isOver && canDrop
+                  ? "border-brand/60 bg-brand/5"
+                  : "border-slate-800 bg-slate-900/40"
+              ].join(" ")}
+            >
+              {fields.length === 0 ? (
+                <div className="flex h-full items-center justify-center text-sm text-slate-500">
+                  Drag fields from the sidebar to get started.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {fields.map((field, index) => (
+                    <FieldItem
+                      key={field.id}
+                      field={field}
+                      index={index}
+                      moveField={moveField}
+                      onSelect={selectField}
+                      onRemove={removeField}
+                      isSelected={field.id === selectedFieldId}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
         );
       }
 
@@ -737,19 +801,70 @@
         );
       }
 
-      function PlaceholderPanel({ title, message }) {
+      function LivePreviewPanel({ fields, formDetails, onClose }) {
         return (
-          <section className="rounded-3xl border border-slate-800 bg-slate-900/40 backdrop-blur p-10 text-center shadow-elevated">
-            <h3 className="text-xl font-semibold text-slate-100 mb-3">
-              {title}
-            </h3>
-            <p className="text-sm text-slate-400 max-w-lg mx-auto">
-              {message}
-            </p>
+          <section className="rounded-3xl border border-brand/30 bg-slate-950/80 backdrop-blur p-6 shadow-elevated">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-semibold text-slate-100">
+                  Live Preview
+                </h3>
+                <p className="text-sm text-slate-400">
+                  This is exactly what your published form will look like.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-full border border-brand/60 bg-brand/10 px-4 py-2 text-sm font-semibold text-brand hover:bg-brand/20"
+              >
+                Close Preview
+              </button>
+            </div>
+            <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-6 space-y-6">
+              <div>
+                <h4 className="text-2xl font-semibold text-white">
+                  {formDetails.title || "Untitled Form"}
+                </h4>
+                {formDetails.description ? (
+                  <p className="mt-1 text-sm text-slate-400">
+                    {formDetails.description}
+                  </p>
+                ) : null}
+              </div>
+              <form className="space-y-5">
+                {fields.length === 0 ? (
+                  <p className="text-sm text-slate-500">
+                    Add fields in Build mode to preview them here.
+                  </p>
+                ) : (
+                  fields.map((field) => (
+                    <div key={field.id} className="space-y-2">
+                      <label className="block text-sm font-medium text-slate-200">
+                        {field.label || "Untitled field"}
+                        {field.required ? (
+                          <span className="ml-2 rounded-full bg-rose-500/20 px-2 py-0.5 text-xs text-rose-300">
+                            Required
+                          </span>
+                        ) : null}
+                      </label>
+                      <FieldPreviewControl field={field} />
+                    </div>
+                  ))
+                )}
+                <button
+                  type="button"
+                  disabled
+                  className="inline-flex items-center justify-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-brand/30 disabled:opacity-70"
+                >
+                  Submit
+                </button>
+              </form>
+            </div>
           </section>
         );
       }
-
+      
       function ScriptsPanel({ scripts, onChange }) {
         return (
           <section className="rounded-3xl border border-slate-800 bg-slate-900/40 backdrop-blur p-6 shadow-elevated space-y-4">
@@ -758,15 +873,14 @@
                 Custom Scripts
               </h3>
               <p className="text-sm text-slate-400">
-                Inject custom JavaScript to push data to third-party services once
-                submissions are saved. Runs after validation.
+                Inject JavaScript to push submissions to external services after validation.
               </p>
             </div>
             <textarea
               value={scripts}
               onChange={(event) => onChange(event.target.value)}
               placeholder="// Write post-submit script..."
-              rows={14}
+              rows={12}
               className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-sm font-mono text-slate-200 focus:border-brand/60 focus:outline-none"
             />
             <div className="flex items-center justify-between text-xs text-slate-500">
@@ -784,8 +898,194 @@
         );
       }
 
+      function BuildWorkspace({
+        fields,
+        addField,
+        moveField,
+        removeField,
+        selectField,
+        selectedFieldId,
+        updateField,
+        showPreview,
+        togglePreview,
+        formDetails
+      }) {
+        const selectedField = fields.find(
+          (field) => field.id === selectedFieldId
+        );
+
+        return (
+          <div className="space-y-6">
+            <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h2 className="text-2xl font-semibold text-white">
+                  Build your form
+                </h2>
+                <p className="text-sm text-slate-400">
+                  Drag components from the toolbox, then fine-tune labels and placeholders.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={togglePreview}
+                className={[
+                  "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition",
+                  showPreview
+                    ? "border-brand/60 bg-brand/10 text-brand hover:bg-brand/20"
+                    : "border-slate-700 bg-slate-900/70 text-slate-300 hover:border-brand/40 hover:text-brand"
+                ].join(" ")}
+              >
+                {showPreview ? "Hide live preview" : "Show live preview"}
+              </button>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)_minmax(0,320px)]">
+              <div className="lg:order-none order-last">
+                <FieldToolbox />
+              </div>
+              <div className="space-y-6">
+                <FieldsCanvas
+                  fields={fields}
+                  addField={addField}
+                  moveField={moveField}
+                  removeField={removeField}
+                  selectField={selectField}
+                  selectedFieldId={selectedFieldId}
+                />
+              </div>
+              <section className="rounded-3xl border border-slate-800 bg-slate-900/40 backdrop-blur p-6 shadow-elevated">
+                <h3 className="text-lg font-semibold text-slate-100 mb-4">
+                  Field Inspector
+                </h3>
+                <FieldEditor
+                  field={selectedField}
+                  onUpdate={updateField}
+                />
+              </section>
+            </div>
+
+            {showPreview ? (
+              <LivePreviewPanel
+                fields={fields}
+                formDetails={formDetails}
+                onClose={togglePreview}
+              />
+            ) : null}
+          </div>
+        );
+      }
+
+      function SettingsWorkspace({
+        formDetails,
+        onFormDetailsChange,
+        scripts,
+        onScriptsChange
+      }) {
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-semibold text-white">
+                Settings
+              </h2>
+              <p className="text-sm text-slate-400">
+                Configure metadata, internal notes, and automation scripts.
+              </p>
+            </div>
+            <BasicDetails details={formDetails} onChange={onFormDetailsChange} />
+            <ScriptsPanel scripts={scripts} onChange={onScriptsChange} />
+          </div>
+        );
+      }
+
+      function PublishWorkspace({ fields, formDetails }) {
+        const summaryItems = [
+          {
+            label: "Fields",
+            value: fields.length ? `${fields.length} configured` : "No fields yet",
+            hint: "Add at least one field to publish."
+          },
+          {
+            label: "Title",
+            value: formDetails.title || "Untitled form",
+            hint: formDetails.description
+              ? formDetails.description.slice(0, 80)
+              : "Add a short description in settings."
+          },
+          {
+            label: "Workspace",
+            value: formDetails.workspace || "Not assigned",
+            hint: `Category: ${formDetails.category || "—"}`
+          }
+        ];
+
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-semibold text-white">
+                Publish checklist
+              </h2>
+              <p className="text-sm text-slate-400">
+                Review final steps before generating a shareable link for your crew or clients.
+              </p>
+            </div>
+            <section className="rounded-3xl border border-slate-800 bg-slate-900/40 backdrop-blur p-6 shadow-elevated">
+              <div className="grid gap-4 md:grid-cols-3">
+                {summaryItems.map((item) => (
+                  <div
+                    key={item.label}
+                    className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 space-y-1"
+                  >
+                    <span className="text-xs uppercase tracking-wide text-slate-500">
+                      {item.label}
+                    </span>
+                    <p className="text-sm font-semibold text-slate-100">
+                      {item.value}
+                    </p>
+                    <p className="text-xs text-slate-500">{item.hint}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+            <section className="rounded-3xl border border-slate-800 bg-slate-900/40 backdrop-blur p-6 flex flex-col gap-4 shadow-elevated">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-100">
+                  Publish to workspace
+                </h3>
+                <p className="text-sm text-slate-400">
+                  Once published, this form becomes available in Fill mode and share links.
+                </p>
+              </div>
+              <div className="grid gap-3">
+                <label className="inline-flex items-center gap-2 text-sm text-slate-300">
+                  <input type="checkbox" className="text-brand" />
+                  Require approval before publish
+                </label>
+                <label className="inline-flex items-center gap-2 text-sm text-slate-300">
+                  <input type="checkbox" className="text-brand" />
+                  Send publish notification to workspace owner
+                </label>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  className="rounded-full bg-brand px-5 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-brand/40 hover:shadow-brand/60"
+                >
+                  Generate share link
+                </button>
+                <button
+                  type="button"
+                  className="rounded-full border border-slate-700 bg-slate-900 px-5 py-2 text-sm font-semibold text-slate-200 hover:border-brand/40 hover:text-brand"
+                >
+                  Export template
+                </button>
+              </div>
+            </section>
+          </div>
+        );
+      }
+
       function App() {
-        const [activeTab, setActiveTab] = useState("fields");
+        const [activeNav, setActiveNav] = useState("build");
         const [fields, setFields] = useState([]);
         const [selectedFieldId, setSelectedFieldId] = useState(null);
         const [formDetails, setFormDetails] = useState({
@@ -796,6 +1096,7 @@
           version: "v1.0.0"
         });
         const [scripts, setScripts] = useState("");
+        const [showPreview, setShowPreview] = useState(false);
 
         const addField = useCallback((blueprint) => {
           setFields((prev) => {
@@ -803,6 +1104,7 @@
             setSelectedFieldId(newField.id);
             return [...prev, newField];
           });
+          setShowPreview(false);
         }, []);
 
         const moveField = useCallback((fromIndex, toIndex) => {
@@ -833,68 +1135,91 @@
           setSelectedFieldId(fieldId);
         }, []);
 
-        const tabs = useMemo(
+        const navTabs = useMemo(
           () => [
-            { id: "basic", label: "Basic Details" },
-            { id: "fields", label: "Fields" },
-            { id: "rules", label: "Rules" },
-            { id: "scripts", label: "Scripts" }
+            { id: "build", label: "Build" },
+            { id: "settings", label: "Settings" },
+            { id: "publish", label: "Publish" }
           ],
           []
         );
+
+        const togglePreview = useCallback(() => {
+          setShowPreview((prev) => !prev);
+        }, []);
+
+        useEffect(() => {
+          setShowPreview(false);
+        }, [activeNav]);
 
         return (
           <DndProvider backend={HTML5Backend}>
             <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-930 to-slate-950">
               <header className="border-b border-slate-900/80 bg-gradient-to-r from-slate-950/90 via-slate-900/70 to-slate-950/90 backdrop-blur">
                 <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-8 lg:px-10">
-                  <div className="flex flex-col gap-3">
-                    <div className="inline-flex w-fit items-center gap-3 rounded-full border border-slate-800 bg-slate-900/70 px-3 py-1 text-xs text-slate-400">
-                      <span className="h-2 w-2 rounded-full bg-brand"></span>
-                      Form Builder Workspace
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex flex-col gap-2">
+                      <div className="inline-flex w-fit items-center gap-3 rounded-full border border-slate-800 bg-slate-900/70 px-3 py-1 text-xs text-slate-400">
+                        <span className="h-2 w-2 rounded-full bg-brand"></span>
+                        Form Builder Workspace
+                      </div>
+                      <h1 className="text-3xl font-bold text-white lg:text-4xl">
+                        Drag-and-drop Form Builder
+                      </h1>
+                      <p className="text-base text-slate-400 max-w-3xl">
+                        Structure fields, wire up automations, and publish polished forms to crews or clients.
+                      </p>
                     </div>
-                    <h1 className="text-3xl font-bold text-white lg:text-4xl">
-                      Drag-and-drop Form Builder
-                    </h1>
-                    <p className="text-base text-slate-400 max-w-3xl">
-                      Design modern forms, orchestrate business rules, and plug in
-                      custom scripts — all from a single canvas.
-                    </p>
+                    <nav className="inline-flex rounded-full border border-slate-800 bg-slate-900/70 p-1">
+                      {navTabs.map((tab) => {
+                        const isActive = tab.id === activeNav;
+                        return (
+                          <button
+                            key={tab.id}
+                            type="button"
+                            onClick={() => setActiveNav(tab.id)}
+                            className={[
+                              "px-5 py-2 text-sm font-semibold rounded-full transition",
+                              isActive
+                                ? "bg-brand text-slate-900 shadow-lg shadow-brand/30"
+                                : "text-slate-300 hover:text-brand"
+                            ].join(" ")}
+                          >
+                            {tab.label}
+                          </button>
+                        );
+                      })}
+                    </nav>
                   </div>
-                  <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
                 </div>
               </header>
 
-              <main className="mx-auto grid max-w-6xl gap-8 px-6 py-10 lg:px-10 xl:grid-cols-[minmax(0,3fr)_minmax(0,1.2fr)]">
-                <section className="space-y-6">
-                  {activeTab === "basic" && (
-                    <BasicDetails
-                      details={formDetails}
-                      onChange={setFormDetails}
-                    />
-                  )}
-                  {activeTab === "fields" && (
-                    <FieldsCanvas
-                      fields={fields}
-                      addField={addField}
-                      moveField={moveField}
-                      removeField={removeField}
-                      selectField={selectField}
-                      selectedFieldId={selectedFieldId}
-                      updateField={updateField}
-                    />
-                  )}
-                  {activeTab === "rules" && (
-                    <PlaceholderPanel
-                      title="Rules Builder"
-                      message="Define conditional logic, branching, and automation in this workspace. Assign rules to fields, control visibility, and trigger downstream actions."
-                    />
-                  )}
-                  {activeTab === "scripts" && (
-                    <ScriptsPanel scripts={scripts} onChange={setScripts} />
-                  )}
-                </section>
-                <FieldToolbox key={activeTab} />
+              <main className="mx-auto max-w-6xl px-6 py-10 lg:px-10">
+                {activeNav === "build" && (
+                  <BuildWorkspace
+                    fields={fields}
+                    addField={addField}
+                    moveField={moveField}
+                    removeField={removeField}
+                    selectField={selectField}
+                    selectedFieldId={selectedFieldId}
+                    updateField={updateField}
+                    showPreview={showPreview}
+                    togglePreview={togglePreview}
+                    formDetails={formDetails}
+                  />
+                )}
+                {activeNav === "settings" && (
+                  <SettingsWorkspace
+                    formDetails={formDetails}
+                    onFormDetailsChange={setFormDetails}
+                    scripts={scripts}
+                    onScriptsChange={setScripts}
+                  />
+                )}
+                {activeNav === "publish" && (
+                  <PublishWorkspace fields={fields} formDetails={formDetails} />
+                )}
               </main>
             </div>
           </DndProvider>
