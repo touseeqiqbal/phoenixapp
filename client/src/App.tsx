@@ -68,8 +68,8 @@ function ToolboxPanel({ categories }: { categories: FieldCategory[] }) {
   return (
     <aside className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-slate-100">Field Toolbox</h3>
-        <p className="text-sm text-slate-400">
+        <h3 className="text-lg font-semibold text-slate-900">Field Toolbox</h3>
+        <p className="text-sm text-slate-500">
           Drag a component into the canvas to add it to your form.
         </p>
       </div>
@@ -77,16 +77,16 @@ function ToolboxPanel({ categories }: { categories: FieldCategory[] }) {
         {categories.map((section) => (
           <section
             key={section.title}
-            className="rounded-2xl border border-slate-800 bg-slate-900/40 backdrop-blur p-4 space-y-3"
+            className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3 shadow-sm"
           >
             <header className="flex items-center justify-between">
               <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-200">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   {section.title}
                 </h4>
-                <p className="text-xs text-slate-400 mt-1">{section.description}</p>
+                <p className="text-xs text-slate-500 mt-1">{section.description}</p>
               </div>
-              <span className="rounded-full bg-brand/10 px-2 py-0.5 text-xs text-brand/90">
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
                 {section.items.length}
               </span>
             </header>
@@ -128,15 +128,15 @@ function ToolboxItem({ blueprint }: { blueprint: FieldBlueprint }) {
       {...attributes}
       {...listeners}
       className={clsx(
-        "text-left rounded-xl border border-slate-700/60 bg-slate-900/70 px-4 py-3 transition",
-        "hover:-translate-y-1 hover:border-brand/30 hover:bg-slate-900/90"
+        "text-left rounded-xl border border-slate-200 bg-white px-4 py-3 transition shadow-sm",
+        "hover:-translate-y-1 hover:border-brand/40 hover:shadow-md"
       )}
     >
       <div className="flex items-center gap-3">
         <span className="text-xl">{blueprint.icon}</span>
         <div>
-          <p className="text-sm font-semibold text-slate-100">{blueprint.label}</p>
-          <p className="text-xs text-slate-400">Drag into canvas</p>
+          <p className="text-sm font-semibold text-slate-900">{blueprint.label}</p>
+          <p className="text-xs text-slate-500">Drag into canvas</p>
         </div>
       </div>
     </button>
@@ -145,7 +145,7 @@ function ToolboxItem({ blueprint }: { blueprint: FieldBlueprint }) {
 
 function FieldPreview({ field }: { field: BuilderField }) {
   const baseInput =
-    "w-full rounded-lg border border-slate-700/60 bg-slate-900/60 px-3 py-2 text-sm text-slate-200";
+    "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand/40";
 
   switch (field.type) {
     case "textarea":
@@ -167,27 +167,30 @@ function FieldPreview({ field }: { field: BuilderField }) {
           ))}
         </select>
       );
-    case "checkbox":
-      return (
-        <label className="flex items-center gap-2 text-sm text-slate-300">
-          <input type="checkbox" disabled className="text-brand" />
-          <span>{field.label}</span>
-        </label>
-      );
-    case "radio":
-      return (
-        <div className="space-y-2">
-          {(field.options ?? ["Choice 1", "Choice 2"]).map((option) => (
-            <label key={option} className="flex items-center gap-2 text-sm">
-              <input type="radio" disabled className="text-brand" />
-              <span className="text-slate-300">{option}</span>
-            </label>
-          ))}
-        </div>
-      );
+      case "checkbox":
+        return (
+          <label className="flex items-center gap-2 text-sm text-slate-600">
+            <input type="checkbox" disabled className="text-brand" />
+            <span>{field.label}</span>
+          </label>
+        );
+      case "radio":
+        return (
+          <div className="space-y-2">
+            {(field.options ?? ["Choice 1", "Choice 2"]).map((option) => (
+              <label
+                key={option}
+                className="flex items-center gap-2 text-sm text-slate-600"
+              >
+                <input type="radio" disabled className="text-brand" />
+                <span>{option}</span>
+              </label>
+            ))}
+          </div>
+        );
     case "image":
       return (
-        <div className="flex items-center justify-center rounded-lg border border-dashed border-slate-700 bg-slate-900/60 px-4 py-6 text-sm text-slate-400">
+        <div className="flex items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-500">
           Image block preview
         </div>
       );
@@ -216,7 +219,7 @@ function FieldPreview({ field }: { field: BuilderField }) {
           {(field.options ?? ["Product A", "Product B"]).map((product) => (
             <label
               key={product}
-              className="flex items-center justify-between rounded-lg border border-slate-700/60 bg-slate-900/60 px-3 py-2 text-sm text-slate-300"
+              className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
             >
               <span>{product}</span>
               <input type="checkbox" disabled className="text-brand" />
@@ -226,7 +229,7 @@ function FieldPreview({ field }: { field: BuilderField }) {
       );
     case "rating":
       return (
-        <div className="flex items-center gap-1 text-brand">
+        <div className="flex items-center gap-1 text-amber-400">
           {[1, 2, 3, 4, 5].map((star) => (
             <span key={star} aria-hidden="true">
               ⭐
@@ -270,13 +273,13 @@ function FieldInspector({
     label: blueprint.label
   }));
 
-  if (!field) {
-    return (
-      <div className="rounded-2xl border border-dashed border-slate-700/70 bg-slate-900/40 px-6 py-8 text-center text-sm text-slate-400">
-        Select a field in the canvas to edit its settings.
-      </div>
-    );
-  }
+    if (!field) {
+      return (
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-8 text-center text-sm text-slate-500">
+          Select a field in the canvas to edit its settings.
+        </div>
+      );
+    }
 
   const handleChange = <Key extends keyof BuilderField>(
     key: Key,
@@ -300,33 +303,33 @@ function FieldInspector({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
           Field label
         </label>
         <input
           value={field.label}
           onChange={(event) => handleChange("label", event.target.value)}
-          className="w-full rounded-lg border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 focus:border-brand/60 focus:outline-none"
+          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/30"
         />
       </div>
       <div className="space-y-2">
-        <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
           Placeholder
         </label>
         <input
           value={field.placeholder ?? ""}
           onChange={(event) => handleChange("placeholder", event.target.value)}
-          className="w-full rounded-lg border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 focus:border-brand/60 focus:outline-none"
+          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/30"
         />
       </div>
       <div className="space-y-2">
-        <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
           Field type
         </label>
         <select
           value={field.type}
           onChange={(event) => handleTypeChange(event.target.value)}
-          className="w-full rounded-lg border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 focus:border-brand/60 focus:outline-none"
+          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/30"
         >
           {fieldTypeOptions.map((option) => (
             <option key={option.value} value={option.value}>
@@ -335,7 +338,7 @@ function FieldInspector({
           ))}
         </select>
       </div>
-      <label className="inline-flex items-center gap-2 text-sm text-slate-300">
+      <label className="inline-flex items-center gap-2 text-sm text-slate-600">
         <input
           type="checkbox"
           checked={field.required}
@@ -380,23 +383,23 @@ function SortableField({
     opacity: isDragging ? 0.5 : 1
   };
 
-  return (
-    <div
+    return (
+      <div
       ref={setNodeRef}
       style={style}
       className={clsx(
-        "rounded-2xl border px-4 py-4 backdrop-blur transition",
+          "rounded-2xl border px-4 py-4 transition shadow-sm bg-white",
         isSelected
-          ? "border-brand bg-brand/10"
-          : "border-slate-800 bg-slate-900/60 hover:border-slate-700"
+            ? "border-brand/50 ring-2 ring-brand/30"
+            : "border-slate-200 hover:border-brand/40"
       )}
     >
       <header className="mb-3 flex items-center justify-between">
         <div>
-          <h4 className="text-sm font-semibold text-slate-100">
+            <h4 className="text-sm font-semibold text-slate-900">
             {field.label || "Untitled field"}
           </h4>
-          <p className="text-xs uppercase tracking-wide text-slate-500">
+            <p className="text-xs uppercase tracking-wide text-slate-400">
             {field.type}
           </p>
         </div>
@@ -405,14 +408,14 @@ function SortableField({
             type="button"
             {...attributes}
             {...listeners}
-            className="text-xs text-slate-400 hover:text-brand focus:outline-none"
+              className="text-xs text-slate-500 hover:text-brand focus:outline-none"
           >
             Drag
           </button>
           <button
             type="button"
             onClick={() => onRemove(field.id)}
-            className="text-xs text-rose-400 hover:text-rose-300"
+              className="text-xs text-rose-500 hover:text-rose-400"
           >
             Remove
           </button>
@@ -451,16 +454,16 @@ function FieldsCanvas({
     id: droppableContainerId
   });
 
-  return (
-    <section className="rounded-3xl border border-slate-800 bg-slate-900/40 backdrop-blur p-6 shadow-elevated">
+    return (
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-md">
       <header className="mb-4 flex items-center justify-between">
         <div>
-          <h3 className="text-xl font-semibold text-slate-100">Form Canvas</h3>
-          <p className="text-sm text-slate-400">
+            <h3 className="text-xl font-semibold text-slate-900">Form Canvas</h3>
+            <p className="text-sm text-slate-500">
             Drag fields here then click to edit their settings.
           </p>
         </div>
-        <span className="rounded-full border border-slate-800 bg-slate-900 px-3 py-1 text-xs text-slate-400">
+          <span className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-500">
           {fields.length} fields
         </span>
       </header>
@@ -471,8 +474,8 @@ function FieldsCanvas({
         <div
           ref={setNodeRef}
           className={clsx(
-            "min-h-[320px] rounded-2xl border-2 border-dashed px-4 py-6 transition",
-            isOver ? "border-brand/60 bg-brand/5" : "border-slate-800 bg-slate-900/40"
+            "min-h-[320px] rounded-2xl border-2 border-dashed px-4 py-6 transition bg-slate-50",
+            isOver ? "border-brand/50 bg-brand/10" : "border-slate-200"
           )}
         >
           {fields.length === 0 ? (
@@ -508,11 +511,11 @@ function LivePreviewPanel({
   onClose: () => void;
 }) {
   return (
-    <section className="rounded-3xl border border-brand/30 bg-slate-950/80 backdrop-blur p-6 shadow-elevated">
+    <section className="rounded-3xl border border-brand/40 bg-white p-6 shadow-xl">
       <header className="flex items-center justify-between">
         <div>
-          <h3 className="text-xl font-semibold text-slate-100">Live Preview</h3>
-          <p className="text-sm text-slate-400">
+          <h3 className="text-xl font-semibold text-slate-900">Live Preview</h3>
+          <p className="text-sm text-slate-500">
             Exactly what your published form will look like.
           </p>
         </div>
@@ -524,13 +527,13 @@ function LivePreviewPanel({
           Close preview
         </button>
       </header>
-      <div className="mt-6 space-y-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+      <div className="mt-6 space-y-6 rounded-2xl border border-slate-200 bg-white p-6">
         <div>
-          <h4 className="text-2xl font-semibold text-white">
+          <h4 className="text-2xl font-semibold text-slate-900">
             {formDetails.title || "Untitled form"}
           </h4>
           {formDetails.description ? (
-            <p className="mt-1 text-sm text-slate-400">{formDetails.description}</p>
+            <p className="mt-1 text-sm text-slate-500">{formDetails.description}</p>
           ) : null}
         </div>
         <form className="space-y-5">
@@ -541,10 +544,10 @@ function LivePreviewPanel({
           ) : (
             fields.map((field) => (
               <div key={field.id} className="space-y-2">
-                <label className="block text-sm font-medium text-slate-200">
+                <label className="block text-sm font-medium text-slate-900">
                   {field.label || "Untitled field"}
                   {field.required ? (
-                    <span className="ml-2 rounded-full bg-rose-500/20 px-2 py-0.5 text-xs text-rose-300">
+                    <span className="ml-2 rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-500">
                       Required
                     </span>
                   ) : null}
@@ -556,7 +559,7 @@ function LivePreviewPanel({
           <button
             type="button"
             disabled
-            className="inline-flex items-center justify-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-brand/30 disabled:opacity-70"
+            className="inline-flex items-center justify-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-brand/30 disabled:opacity-70"
           >
             Submit
           </button>
@@ -578,38 +581,38 @@ function BasicDetails({
   };
 
   return (
-    <section className="rounded-3xl border border-slate-800 bg-slate-900/40 backdrop-blur p-6 shadow-elevated space-y-6">
+    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-md space-y-6">
       <header>
-        <h3 className="text-xl font-semibold text-slate-100">Basic details</h3>
-        <p className="text-sm text-slate-400">
+        <h3 className="text-xl font-semibold text-slate-900">Basic details</h3>
+        <p className="text-sm text-slate-500">
           Set the fundamentals before sharing or publishing your template.
         </p>
       </header>
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Form title
           </label>
           <input
             value={details.title}
             onChange={(event) => handleChange("title", event.target.value)}
             placeholder="Daily service log"
-            className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-2.5 text-sm text-slate-100 focus:border-brand/60 focus:outline-none"
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/30"
           />
         </div>
         <div className="space-y-2">
-          <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Workspace
           </label>
           <input
             value={details.workspace}
             onChange={(event) => handleChange("workspace", event.target.value)}
             placeholder="Northwest crew"
-            className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-2.5 text-sm text-slate-100 focus:border-brand/60 focus:outline-none"
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/30"
           />
         </div>
         <div className="space-y-2 md:col-span-2">
-          <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Description
           </label>
           <textarea
@@ -617,17 +620,17 @@ function BasicDetails({
             onChange={(event) => handleChange("description", event.target.value)}
             rows={4}
             placeholder="Explain when crews should use this template, what photos to attach, and who reviews submissions."
-            className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3 text-sm text-slate-100 focus:border-brand/60 focus:outline-none"
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/30"
           />
         </div>
         <div className="space-y-2">
-          <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Category
           </label>
           <select
             value={details.category}
             onChange={(event) => handleChange("category", event.target.value)}
-            className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-2.5 text-sm text-slate-100 focus:border-brand/60 focus:outline-none"
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/30"
           >
             <option value="operations">Operations</option>
             <option value="safety">Safety</option>
@@ -636,14 +639,14 @@ function BasicDetails({
           </select>
         </div>
         <div className="space-y-2">
-          <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Version
           </label>
           <input
             value={details.version}
             onChange={(event) => handleChange("version", event.target.value)}
             placeholder="v1.0.0"
-            className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-2.5 text-sm text-slate-100 focus:border-brand/60 focus:outline-none"
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/30"
           />
         </div>
       </div>
@@ -679,42 +682,42 @@ function PublishWorkspace({
   return (
     <div className="space-y-6">
       <header>
-        <h2 className="text-2xl font-semibold text-white">Publish checklist</h2>
-        <p className="text-sm text-slate-400">
+        <h2 className="text-2xl font-semibold text-slate-900">Publish checklist</h2>
+        <p className="text-sm text-slate-500">
           Review final steps before generating share links or embedding this form.
         </p>
       </header>
-      <section className="rounded-3xl border border-slate-800 bg-slate-900/40 backdrop-blur p-6 shadow-elevated">
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-md">
         <div className="grid gap-4 md:grid-cols-3">
           {summaryItems.map((item) => (
             <div
               key={item.label}
-              className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 space-y-1"
+              className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-1"
             >
               <span className="text-xs uppercase tracking-wide text-slate-500">
                 {item.label}
               </span>
-              <p className="text-sm font-semibold text-slate-100">{item.value}</p>
+              <p className="text-sm font-semibold text-slate-900">{item.value}</p>
               <p className="text-xs text-slate-500">{item.hint}</p>
             </div>
           ))}
         </div>
       </section>
-      <section className="rounded-3xl border border-slate-800 bg-slate-900/40 backdrop-blur p-6 shadow-elevated space-y-4">
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-md space-y-4">
         <div>
-          <h3 className="text-lg font-semibold text-slate-100">
+          <h3 className="text-lg font-semibold text-slate-900">
             Publish to workspace
           </h3>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-500">
             Publishing makes the form available in Fill mode and enables share links.
           </p>
         </div>
         <div className="grid gap-3">
-          <label className="inline-flex items-center gap-2 text-sm text-slate-300">
+          <label className="inline-flex items-center gap-2 text-sm text-slate-600">
             <input type="checkbox" className="text-brand" />
             Require approval before publish
           </label>
-          <label className="inline-flex items-center gap-2 text-sm text-slate-300">
+          <label className="inline-flex items-center gap-2 text-sm text-slate-600">
             <input type="checkbox" className="text-brand" />
             Notify workspace owner when published
           </label>
@@ -722,13 +725,13 @@ function PublishWorkspace({
         <div className="flex flex-wrap gap-3">
           <button
             type="button"
-            className="rounded-full bg-brand px-5 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-brand/40 hover:shadow-brand/60"
+            className="rounded-full bg-brand px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-brand/40 hover:shadow-brand/60"
           >
             Generate share link
           </button>
           <button
             type="button"
-            className="rounded-full border border-slate-700 bg-slate-900 px-5 py-2 text-sm font-semibold text-slate-200 hover:border-brand/40 hover:text-brand"
+            className="rounded-full border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-700 hover:border-brand/40 hover:text-brand"
           >
             Export template JSON
           </button>
@@ -752,16 +755,16 @@ function SettingsWorkspace({
   return (
     <div className="space-y-6">
       <header>
-        <h2 className="text-2xl font-semibold text-white">Settings</h2>
-        <p className="text-sm text-slate-400">
+        <h2 className="text-2xl font-semibold text-slate-900">Settings</h2>
+        <p className="text-sm text-slate-500">
           Configure metadata, internal notes, and automation scripts.
         </p>
       </header>
       <BasicDetails details={details} onChange={onDetailsChange} />
-      <section className="rounded-3xl border border-slate-800 bg-slate-900/40 backdrop-blur p-6 shadow-elevated space-y-4">
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-md space-y-4">
         <div>
-          <h3 className="text-lg font-semibold text-slate-100">Custom scripts</h3>
-          <p className="text-sm text-slate-400">
+          <h3 className="text-lg font-semibold text-slate-900">Custom scripts</h3>
+          <p className="text-sm text-slate-500">
             Inject JavaScript to push submissions to external services after validation.
           </p>
         </div>
@@ -770,7 +773,7 @@ function SettingsWorkspace({
           onChange={(event) => onScriptsChange(event.target.value)}
           rows={12}
           placeholder={"// Example:\n// export async function onSubmitSuccess(payload) {\n//   await fetch('/api/webhook', { method: 'POST', body: JSON.stringify(payload) });\n// }"}
-          className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-sm font-mono text-slate-200 focus:border-brand/60 focus:outline-none"
+          className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-mono text-slate-800 focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/30"
         />
         <p className="text-xs text-slate-500">
           Tip: Use the <code className="bg-slate-900 px-2 py-1 rounded">onSubmitSuccess</code>{" "}
@@ -903,43 +906,43 @@ function App(): ReactNode {
     if (activeDrag.type === "toolbox") {
       const blueprint = activeDrag.blueprint;
       return (
-        <div className="w-64 rounded-xl border border-brand/40 bg-slate-900/80 px-4 py-3 shadow-lg shadow-brand/20">
+        <div className="w-64 rounded-xl border border-brand/40 bg-white px-4 py-3 shadow-lg shadow-brand/20">
           <div className="flex items-center gap-3">
             <span className="text-xl">{blueprint.icon}</span>
             <div>
-              <p className="text-sm font-semibold text-slate-100">{blueprint.label}</p>
-              <p className="text-xs text-slate-400">{blueprint.placeholder}</p>
+              <p className="text-sm font-semibold text-slate-900">{blueprint.label}</p>
+              <p className="text-xs text-slate-500">{blueprint.placeholder}</p>
             </div>
           </div>
         </div>
       );
     }
     return (
-      <div className="w-72 rounded-xl border border-brand/40 bg-slate-900/80 px-4 py-4 shadow-lg shadow-brand/20">
+      <div className="w-72 rounded-xl border border-brand/40 bg-white px-4 py-4 shadow-lg shadow-brand/20">
         <FieldPreview field={activeDrag.field} />
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-940 to-slate-950 text-slate-100">
-      <header className="border-b border-slate-900/80 bg-gradient-to-r from-slate-950/90 via-slate-900/70 to-slate-950/90 backdrop-blur">
+    <div className="min-h-screen bg-slate-100 text-slate-900">
+      <header className="border-b border-slate-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-8 lg:px-10">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-col gap-2">
-              <div className="inline-flex w-fit items-center gap-3 rounded-full border border-slate-800 bg-slate-900/70 px-3 py-1 text-xs text-slate-400">
+              <div className="inline-flex w-fit items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-500">
                 <span className="h-2 w-2 rounded-full bg-brand" />
                 Form Builder Workspace
               </div>
-              <h1 className="text-3xl font-bold text-white lg:text-4xl">
+              <h1 className="text-3xl font-bold text-slate-900 lg:text-4xl">
                 Drag-and-drop form builder
               </h1>
-              <p className="text-base text-slate-400 max-w-3xl">
+              <p className="text-base text-slate-600 max-w-3xl">
                 Structure fields, wire up automations, and publish polished forms to crews
                 or clients without leaving this workspace.
               </p>
             </div>
-            <nav className="inline-flex rounded-full border border-slate-800 bg-slate-900/70 p-1">
+            <nav className="inline-flex rounded-full border border-slate-200 bg-slate-50 p-1 shadow-sm">
               {NAV_TABS.map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (
@@ -950,8 +953,8 @@ function App(): ReactNode {
                     className={clsx(
                       "px-5 py-2 text-sm font-semibold rounded-full transition",
                       isActive
-                        ? "bg-brand text-slate-900 shadow-lg shadow-brand/30"
-                        : "text-slate-300 hover:text-brand"
+                        ? "bg-brand text-white shadow"
+                        : "text-slate-600 hover:text-brand"
                     )}
                   >
                     {tab.label}
@@ -981,8 +984,8 @@ function App(): ReactNode {
                 onSelect={handleSelectField}
                 onRemove={handleRemoveField}
               />
-              <section className="rounded-3xl border border-slate-800 bg-slate-900/40 backdrop-blur p-6 shadow-elevated">
-                <h3 className="text-lg font-semibold text-slate-100 mb-4">
+              <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-md">
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">
                   Field inspector
                 </h3>
                 <FieldInspector
@@ -996,10 +999,10 @@ function App(): ReactNode {
                 type="button"
                 onClick={() => setShowPreview((prev) => !prev)}
                 className={clsx(
-                  "inline-flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-semibold transition",
+                  "inline-flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-semibold transition bg-white shadow-sm",
                   showPreview
-                    ? "border-brand/60 bg-brand/10 text-brand hover:bg-brand/20"
-                    : "border-slate-700 bg-slate-900/70 text-slate-300 hover:border-brand/40 hover:text-brand"
+                    ? "border-brand/60 text-brand hover:bg-brand/10"
+                    : "border-slate-300 text-slate-600 hover:border-brand/40 hover:text-brand"
                 )}
               >
                 {showPreview ? "Hide live preview" : "Show live preview"}
