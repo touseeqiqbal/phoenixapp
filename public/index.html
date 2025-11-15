@@ -1,0 +1,4108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Landscaping Work Log Builder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js" integrity="sha256-u77gjomWSPr0tm56sZyxwx9R0YoiGOhGURGdKO3/ZNg=" crossorigin="anonymous"></script>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #0b132b;
+        --bg-alt: #111d3a;
+        --surface: rgba(19, 30, 58, 0.92);
+        --surface-soft: rgba(24, 38, 72, 0.7);
+        --surface-strong: rgba(30, 46, 84, 0.95);
+        --surface-glass: rgba(255, 255, 255, 0.04);
+        --border: rgba(148, 163, 184, 0.14);
+        --border-strong: rgba(148, 163, 184, 0.32);
+        --accent: #38bdf8;
+        --accent-alt: #a855f7;
+        --accent-strong: rgba(56, 189, 248, 0.65);
+        --muted: rgba(203, 213, 225, 0.72);
+        --muted-strong: rgba(226, 232, 240, 0.88);
+        --text: #f8fbff;
+        --danger: #f87171;
+        --success: #34d399;
+        --warning: #fbbf24;
+        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--text);
+        background:
+          radial-gradient(circle at 15% -20%, rgba(56, 189, 248, 0.26), transparent 52%),
+          radial-gradient(circle at 80% 0%, rgba(120, 90, 255, 0.22), transparent 55%),
+          radial-gradient(ellipse at bottom, rgba(14, 165, 233, 0.2), transparent 60%),
+          linear-gradient(160deg, var(--bg) 0%, var(--bg-alt) 100%);
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+        button {
+          border: none;
+          border-radius: 14px;
+          padding: 0.9rem 1.35rem;
+          min-height: 52px;
+          font-size: 0.98rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, color 0.18s ease;
+        }
+      button.primary {
+        background: linear-gradient(120deg, #38bdf8 0%, #22d3ee 100%);
+        color: #061322;
+        box-shadow: 0 18px 32px -18px rgba(56, 189, 248, 0.65);
+      }
+      button.primary:hover {
+        transform: translateY(-1px);
+      }
+      button.ghost {
+        background: transparent;
+        border: 1px dashed rgba(148, 163, 184, 0.35);
+        color: var(--muted);
+      }
+      button.ghost:hover {
+        color: var(--text);
+        border-color: rgba(148, 163, 184, 0.55);
+      }
+      button.small {
+        padding: 0.55rem 0.9rem;
+        min-height: 0;
+        font-size: 0.85rem;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+      }
+
+      .app-shell {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        min-height: 100vh;
+      }
+      .sidebar {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        background: var(--surface-strong);
+        backdrop-filter: blur(18px);
+        border-right: 1px solid var(--border);
+        padding: 2rem 1.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 2.5rem;
+        box-shadow: 0 40px 120px -60px rgba(8, 12, 28, 0.85);
+      }
+      .sidebar-logo {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.25rem 0;
+      }
+      .sidebar-logo .logo-img {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        box-shadow: 0 20px 36px -24px rgba(8, 12, 28, 0.8);
+        background: rgba(15, 23, 42, 0.6);
+        display: block;
+      }
+      .logo-text-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+      }
+      .logo-title {
+        font-weight: 600;
+        font-size: 1.02rem;
+      }
+      .logo-subtitle {
+        font-size: 0.78rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: rgba(148, 163, 184, 0.68);
+      }
+      .sidebar-nav {
+        display: grid;
+        gap: 0.35rem;
+      }
+      .sidebar-nav button {
+        all: unset;
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.55rem 0.75rem;
+        border-radius: 10px;
+        font-size: 0.93rem;
+        color: rgba(226, 232, 240, 0.72);
+        cursor: pointer;
+        transition: background 0.18s ease, color 0.18s ease;
+      }
+      .sidebar-nav button.active {
+        background: rgba(56, 189, 248, 0.16);
+        color: var(--accent);
+      }
+      .sidebar-nav button:hover {
+        color: var(--text);
+        background: rgba(15, 23, 42, 0.6);
+      }
+      .sidebar-footer {
+        margin-top: auto;
+        font-size: 0.82rem;
+        color: rgba(148, 163, 184, 0.7);
+      }
+
+      .workspace {
+        display: flex;
+        flex-direction: column;
+        gap: 1.75rem;
+        padding: 2rem 2.5rem 2.5rem;
+        max-width: 1440px;
+        margin: 0 auto;
+      }
+      .workspace-header {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+      .workspace-header h1 {
+        margin: 0;
+        font-size: clamp(2rem, 3vw, 2.75rem);
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .workspace-header p {
+        color: var(--muted);
+        max-width: 640px;
+        margin: 0.35rem 0 0;
+        line-height: 1.55;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.3rem 0.85rem;
+        border-radius: 999px;
+        background: rgba(56, 189, 248, 0.18);
+        color: var(--accent);
+        font-size: 0.8rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .user-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1.1rem;
+        padding: 0.85rem 1rem;
+        border-radius: 16px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(15, 23, 42, 0.72);
+        box-shadow: 0 28px 48px -36px rgba(8, 12, 28, 0.6);
+      }
+      .form-branding {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 0.75rem;
+      }
+      .form-branding img {
+        max-height: 56px;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        background: rgba(8, 12, 24, 0.55);
+        padding: 0.3rem 0.75rem;
+      }
+      .user-bar h4 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 600;
+      }
+      .user-bar span.label {
+        display: block;
+        font-size: 0.86rem;
+        color: var(--muted);
+      }
+      .user-bar-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+      }
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.32rem;
+        border-radius: 999px;
+        padding: 0.32rem 0.72rem;
+        font-size: 0.78rem;
+        background: rgba(148, 163, 184, 0.16);
+        color: var(--muted);
+      }
+        .tag.soft {
+          background: rgba(56, 189, 248, 0.18);
+          color: var(--text);
+        }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.3rem 0.75rem;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.16);
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+      .tag.published {
+        background: rgba(52, 211, 153, 0.16);
+        color: #38f0a0;
+      }
+      .tag.draft {
+        background: rgba(248, 113, 113, 0.16);
+        color: #fca5a5;
+      }
+
+      .workspace-tabs {
+        display: inline-flex;
+        align-items: center;
+        background: rgba(15, 23, 42, 0.58);
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.12);
+        padding: 0.4rem;
+        gap: 0.3rem;
+      }
+      .workspace-tabs button {
+        all: unset;
+        cursor: pointer;
+        padding: 0.55rem 1.35rem;
+        border-radius: 999px;
+        font-size: 0.93rem;
+        color: rgba(226, 232, 240, 0.72);
+        transition: background 0.18s ease, color 0.18s ease;
+      }
+      .workspace-tabs button.active {
+        color: var(--text);
+        background: rgba(56, 189, 248, 0.18);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      }
+
+      .workspace-main {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+      .workspace-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+      .workspace-actions button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+      }
+      .settings-grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        margin-top: 0.5rem;
+      }
+      .settings-section {
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        border-radius: 16px;
+        background: rgba(12, 19, 34, 0.7);
+        padding: 1rem 1.1rem 1.2rem;
+        display: grid;
+        gap: 0.8rem;
+      }
+      .settings-section legend {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: rgba(226, 232, 240, 0.85);
+        padding: 0 0.35rem;
+      }
+      .settings-section label {
+        display: grid;
+        gap: 0.4rem;
+        font-size: 0.88rem;
+      }
+      .settings-section label.disabled {
+        opacity: 0.6;
+      }
+      .settings-section label.disabled input,
+      .settings-section label.disabled textarea {
+        cursor: not-allowed;
+      }
+      .segmented-control {
+        display: inline-flex;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: rgba(10, 18, 34, 0.7);
+        overflow: hidden;
+      }
+      .segmented-control button {
+        all: unset;
+        padding: 0.4rem 1.1rem;
+        font-size: 0.85rem;
+        cursor: pointer;
+        color: rgba(226, 232, 240, 0.7);
+        transition: background 0.18s ease, color 0.18s ease;
+      }
+      .segmented-control button.active {
+        background: rgba(56, 189, 248, 0.24);
+        color: var(--text);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      }
+      .segmented-control button + button {
+        border-left: 1px solid rgba(148, 163, 184, 0.18);
+      }
+      .preview-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.5rem;
+        border-radius: 999px;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.78rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: rgba(226, 232, 240, 0.76);
+        background: rgba(56, 189, 248, 0.16);
+      }
+      .toggle-row {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        font-size: 0.9rem;
+      }
+      .toggle-row input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--accent);
+      }
+      .input-hint {
+        color: rgba(148, 163, 184, 0.75);
+        font-size: 0.78rem;
+      }
+      .workspace-hero {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.35rem;
+      }
+      .solution-card {
+        --card-accent: rgba(56, 189, 248, 0.26);
+        --icon-bg: rgba(56, 189, 248, 0.28);
+        position: relative;
+        display: flex;
+        align-items: flex-start;
+        gap: 1.15rem;
+        padding: 1.3rem 1.45rem;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        background: var(--surface-soft);
+        box-shadow: 0 32px 60px -48px rgba(5, 10, 30, 0.65);
+        cursor: pointer;
+        user-select: none;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border 0.18s ease;
+      }
+      .solution-card[data-theme="fill"],
+      .solution-card[data-theme="builder"],
+      .solution-card[data-theme="submissions"] {
+        flex: 1 1 clamp(260px, 23vw, 320px);
+      }
+      .solution-card[data-theme="workflow"] {
+        flex: 1 1 clamp(260px, 23vw, 320px);
+      }
+      .solution-card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at top right, var(--card-accent), transparent 60%);
+        opacity: 0.65;
+        pointer-events: none;
+      }
+      .solution-card > * {
+        position: relative;
+        z-index: 1;
+      }
+      .solution-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(148, 163, 184, 0.32);
+        box-shadow: 0 42px 80px -48px rgba(5, 10, 30, 0.75);
+      }
+      .solution-card:focus-visible {
+        outline: none;
+        box-shadow:
+          0 0 0 2px var(--accent),
+          0 0 0 5px rgba(56, 189, 248, 0.35),
+          0 32px 60px -48px rgba(5, 10, 30, 0.75);
+      }
+      .solution-card[data-theme="builder"] {
+        --card-accent: rgba(168, 85, 247, 0.28);
+        --icon-bg: rgba(168, 85, 247, 0.32);
+      }
+      .solution-card[data-theme="submissions"] {
+        --card-accent: rgba(52, 211, 153, 0.26);
+        --icon-bg: rgba(52, 211, 153, 0.3);
+      }
+      .solution-card[data-theme="workflow"] {
+        --card-accent: rgba(251, 191, 36, 0.28);
+        --icon-bg: rgba(251, 191, 36, 0.32);
+      }
+      .solution-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 1.05rem;
+        color: var(--text);
+        background: var(--icon-bg);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      }
+      .solution-copy {
+        display: grid;
+        gap: 0.35rem;
+      }
+      .solution-copy h3 {
+        margin: 0;
+        font-size: 1.08rem;
+        font-weight: 600;
+      }
+      .solution-copy p {
+        margin: 0;
+        color: var(--muted-strong);
+        font-size: 0.9rem;
+        line-height: 1.45;
+      }
+      .solution-cta {
+        margin-top: 0.2rem;
+        font-size: 0.78rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(226, 232, 240, 0.75);
+      }
+
+      section.view {
+        display: none;
+        border-radius: 22px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        backdrop-filter: blur(26px);
+        padding: 1.75rem;
+        box-shadow: 0 48px 96px -64px rgba(9, 13, 33, 0.9);
+      }
+      section.view.active {
+        display: block;
+      }
+      .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.2rem;
+      }
+      .panel-header h2 {
+        margin: 0;
+        font-size: 1.4rem;
+        font-weight: 600;
+      }
+      .panel-subtitle {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.88rem;
+        line-height: 1.45;
+      }
+
+      .card {
+          background: var(--surface-soft);
+        border-radius: 18px;
+          border: 1px solid var(--border);
+        padding: 1.25rem;
+        display: grid;
+        gap: 1rem;
+      }
+      .two-column {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+        gap: 1.35rem;
+        align-items: start;
+      }
+      form label {
+        display: grid;
+        gap: 0.4rem;
+        font-size: 0.9rem;
+      }
+        input,
+        textarea,
+        select {
+          width: 100%;
+          padding: 0.85rem 1rem;
+          background: rgba(30, 41, 59, 0.88);
+          border: 1px solid rgba(148, 163, 184, 0.18);
+          border-radius: 14px;
+          color: inherit;
+          font-size: 0.98rem;
+          transition: border 0.18s ease, transform 0.18s ease;
+        }
+      input:focus, textarea:focus, select:focus {
+        border-color: rgba(56, 189, 248, 0.55);
+        transform: translateY(-1px);
+        outline: none;
+      }
+      textarea {
+        min-height: 100px;
+        resize: vertical;
+      }
+
+      .controls-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: center;
+      }
+
+      .field-top-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 0.75rem;
+      }
+
+      .field-help-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(7, 10, 20, 0.78);
+        backdrop-filter: blur(12px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        z-index: 85;
+      }
+      .field-help-overlay[hidden] {
+        display: none !important;
+      }
+      .field-help-card {
+        width: min(420px, 92vw);
+        background: var(--surface-strong);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 1.6rem;
+        display: grid;
+        gap: 1rem;
+        box-shadow: 0 32px 80px -48px rgba(4, 8, 20, 0.85);
+      }
+      .field-help-card h3 {
+        margin: 0;
+        font-size: 1.25rem;
+      }
+      .field-help-card ul {
+        margin: 0;
+        padding-left: 1.1rem;
+        display: grid;
+        gap: 0.6rem;
+        color: var(--muted-strong);
+        font-size: 0.95rem;
+      }
+      .field-help-card button {
+        justify-self: flex-end;
+      }
+
+      .field-card {
+        display: grid;
+        gap: 0.65rem;
+        padding: 1.2rem 1.25rem;
+        background: rgba(15, 23, 42, 0.72);
+        border-radius: 16px;
+        border: 1px solid rgba(148, 163, 184, 0.14);
+      }
+      .field-card .meta {
+        color: var(--muted);
+        font-size: 0.78rem;
+      }
+      .field-title {
+        font-weight: 600;
+        font-size: 0.95rem;
+      }
+      .field-card.required .field-title::after {
+        content: " *";
+        color: var(--accent);
+      }
+      .checkbox-grid,
+      .choice-list {
+        display: grid;
+        gap: 0.6rem;
+      }
+      .checkbox-option,
+      .choice-option {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.55rem 0.7rem;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(15, 23, 42, 0.55);
+        font-size: 0.9rem;
+      }
+      .checkbox-option input,
+      .choice-option input {
+        accent-color: var(--accent);
+      }
+      .checkbox-option span,
+      .choice-option span {
+        flex: 1;
+      }
+      .field-static {
+        display: grid;
+        gap: 0.4rem;
+        padding: 1rem 1.1rem;
+        border-radius: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.12);
+        background: rgba(15, 23, 42, 0.6);
+      }
+      .field-static h3 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 600;
+      }
+      .field-static p {
+        margin: 0;
+        color: var(--muted-strong);
+        font-size: 0.88rem;
+        line-height: 1.5;
+      }
+        .field-static img,
+        .preview-image {
+          max-width: 100%;
+          border-radius: 14px;
+          border: 1px solid rgba(148, 163, 184, 0.16);
+          display: block;
+          background: rgba(10, 17, 32, 0.6);
+        }
+      .field-divider {
+        border: none;
+        border-top: 1px dashed rgba(148, 163, 184, 0.24);
+        margin: 0.75rem 0;
+      }
+
+      .share-card {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        justify-content: space-between;
+        align-items: center;
+        border-radius: 16px;
+        border: 1px dashed var(--accent-strong);
+        padding: 1rem 1.25rem;
+        background: var(--surface);
+        box-shadow: inset 0 0 0 1px var(--surface-glass);
+      }
+      .share-visibility {
+        display: grid;
+        gap: 0.45rem;
+        margin-top: 0.75rem;
+      }
+      .share-visibility .segmented-control {
+        width: fit-content;
+      }
+      .share-link {
+        font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, "Source Code Pro", monospace;
+        font-size: 0.82rem;
+        padding: 0.4rem 0.6rem;
+        border-radius: 10px;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        background: rgba(5, 10, 25, 0.75);
+        max-width: clamp(200px, 30vw, 360px);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .share-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 0.75rem;
+        font-size: 0.9rem;
+      }
+      thead {
+        color: rgba(148, 163, 184, 0.75);
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      th, td {
+        padding: 0.7rem 0.6rem;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+        vertical-align: top;
+      }
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      .builder-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 320px) minmax(0, 1fr) minmax(0, 340px);
+        gap: 1.35rem;
+        align-items: start;
+      }
+      .panel {
+        background: var(--surface);
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        padding: 1.4rem;
+        display: grid;
+        gap: 1rem;
+        box-shadow:
+          0 30px 50px -40px rgba(8, 12, 28, 0.8),
+          inset 0 0 0 1px var(--surface-glass);
+      }
+      .panel-header--split {
+        align-items: flex-start;
+      }
+      .panel-header--split .panel-subtitle {
+        margin-top: 0.45rem;
+      }
+      .panel h3 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 600;
+      }
+      .panel-section {
+        display: grid;
+        gap: 0.8rem;
+      }
+      .palette-tabs {
+        display: inline-flex;
+        padding: 0.35rem;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(10, 17, 32, 0.7);
+        gap: 0.35rem;
+      }
+      .palette-tabs button {
+        all: unset;
+        border-radius: 999px;
+        padding: 0.4rem 1rem;
+        font-size: 0.86rem;
+        color: rgba(226, 232, 240, 0.72);
+        cursor: pointer;
+        transition: background 0.18s ease, color 0.18s ease;
+      }
+      .palette-tabs button.active {
+        color: var(--text);
+        background: rgba(56, 189, 248, 0.22);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      }
+      .field-palette {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+        gap: 0.75rem;
+      }
+      .palette-card {
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: rgba(15, 23, 42, 0.62);
+        border-radius: 14px;
+        padding: 0.95rem;
+        display: grid;
+        gap: 0.55rem;
+        transition: transform 0.18s ease, border 0.18s ease, background 0.18s ease;
+      }
+      .palette-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(56, 189, 248, 0.35);
+        background: rgba(22, 33, 56, 0.78);
+      }
+      .palette-card[data-disabled="true"] {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .palette-card[data-disabled="true"]:hover {
+        transform: none;
+        border-color: rgba(148, 163, 184, 0.2);
+        background: rgba(15, 23, 42, 0.62);
+      }
+      .palette-card header {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+      }
+      .palette-card header h4 {
+        margin: 0;
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+      .palette-card header .palette-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        background: rgba(56, 189, 248, 0.22);
+        color: var(--accent);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.88rem;
+        font-weight: 600;
+      }
+      .palette-card p {
+        margin: 0;
+        font-size: 0.78rem;
+        line-height: 1.4;
+        color: rgba(148, 163, 184, 0.72);
+      }
+        .palette-card footer {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+      }
+      .palette-card button {
+        padding: 0.55rem 0.65rem;
+        min-height: 0;
+        font-size: 0.82rem;
+      }
+      .palette-card[data-disabled="true"] .palette-add {
+        cursor: not-allowed;
+      }
+      .palette-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.18rem 0.55rem;
+        border-radius: 999px;
+        font-size: 0.66rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        background: rgba(168, 85, 247, 0.28);
+        color: rgba(255, 255, 255, 0.85);
+      }
+        .tip-card {
+          padding: 0.9rem;
+          border-radius: 12px;
+          background: rgba(15, 23, 42, 0.52);
+          border: 1px solid rgba(148, 163, 184, 0.16);
+          display: grid;
+          gap: 0.45rem;
+        }
+
+      .builder-canvas {
+        display: grid;
+        gap: 0.75rem;
+        min-height: 220px;
+        padding: 1rem;
+        border-radius: 16px;
+        border: 1px dashed rgba(148, 163, 184, 0.18);
+        background: rgba(10, 16, 32, 0.65);
+      }
+      .builder-canvas-empty {
+        place-items: center;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .builder-field-item {
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        border-radius: 14px;
+        padding: 0.9rem;
+        display: grid;
+        gap: 0.65rem;
+        background: rgba(15, 23, 42, 0.9);
+        cursor: pointer;
+        transition: border 0.18s ease, transform 0.18s ease;
+      }
+      .builder-field-item.active {
+        border-color: rgba(56, 189, 248, 0.5);
+        box-shadow: 0 12px 24px -20px rgba(56, 189, 248, 0.55);
+      }
+      .builder-field-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+      .builder-field-head h4 {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+      }
+      .builder-field-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        color: var(--muted);
+        font-size: 0.78rem;
+      }
+      .builder-field-actions {
+        display: flex;
+        gap: 0.45rem;
+      }
+      .icon-button {
+        all: unset;
+        cursor: pointer;
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        color: var(--muted);
+        transition: background 0.18s ease, color 0.18s ease;
+      }
+      .icon-button:hover {
+        color: var(--accent);
+        background: rgba(56, 189, 248, 0.15);
+      }
+      .field-item-handle {
+        cursor: grab;
+        font-size: 1.1rem;
+        color: rgba(148, 163, 184, 0.55);
+      }
+
+      .preview-wrapper {
+        border-radius: 16px;
+        border: 1px solid rgba(148, 163, 184, 0.15);
+        padding: 1.1rem;
+        display: grid;
+        gap: 1rem;
+        background: rgba(10, 16, 32, 0.55);
+      }
+      .preview-wrapper h4 {
+        margin: 0;
+        font-size: 0.95rem;
+        color: var(--muted);
+      }
+      .preview-form {
+        border-radius: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.12);
+        padding: 1.05rem;
+        display: grid;
+        gap: 0.85rem;
+        background: rgba(15, 23, 42, 0.92);
+        max-height: 520px;
+        overflow: auto;
+      }
+      .preview-form label {
+        display: grid;
+        gap: 0.4rem;
+        font-size: 0.87rem;
+        color: rgba(226, 232, 240, 0.85);
+      }
+      .preview-form small {
+        color: rgba(148, 163, 184, 0.7);
+        font-size: 0.75rem;
+      }
+      .preview-form input,
+      .preview-form textarea,
+      .preview-form select {
+        padding: 0.65rem 0.8rem;
+        border-radius: 10px;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        background: rgba(22, 33, 56, 0.9);
+        color: inherit;
+        font-size: 0.9rem;
+      }
+      .preview-branding {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 1rem;
+      }
+      .preview-branding img {
+        max-height: 64px;
+        border-radius: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(8, 13, 28, 0.6);
+        padding: 0.4rem 0.8rem;
+      }
+      .preview-note {
+        margin-top: 0.5rem;
+        font-size: 0.78rem;
+        color: rgba(148, 163, 184, 0.75);
+        text-align: center;
+      }
+      .preview-heading {
+        margin: 0;
+        font-size: 1.15rem;
+        font-weight: 600;
+      }
+      .preview-paragraph {
+        margin: 0;
+        color: rgba(226, 232, 240, 0.85);
+        font-size: 0.88rem;
+        line-height: 1.5;
+      }
+      .preview-divider {
+        border: none;
+        border-bottom: 1px dashed rgba(148, 163, 184, 0.2);
+        margin: 0.75rem 0;
+      }
+      .preview-image-placeholder {
+        border: 1px dashed rgba(148, 163, 184, 0.2);
+        border-radius: 10px;
+        padding: 1.25rem;
+        text-align: center;
+        font-size: 0.82rem;
+        color: rgba(148, 163, 184, 0.75);
+      }
+
+      .inspector-empty {
+        text-align: center;
+        padding: 1.2rem 0.5rem;
+        color: rgba(148, 163, 184, 0.75);
+        font-size: 0.9rem;
+      }
+      .inspector-grid {
+        display: grid;
+        gap: 0.85rem;
+      }
+      .inspector-grid label {
+        display: grid;
+        gap: 0.35rem;
+        font-size: 0.86rem;
+      }
+
+      .empty-state {
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.9rem;
+        padding: 1.2rem 0.5rem;
+      }
+      .alert {
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        font-size: 0.88rem;
+      }
+      .alert.success {
+        background: rgba(34, 211, 153, 0.14);
+        color: #bdfbd7;
+      }
+      .alert.error {
+        background: rgba(248, 113, 113, 0.14);
+        color: #fbc6ca;
+      }
+
+      .auth-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(8, 11, 25, 0.86);
+        backdrop-filter: blur(14px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1.75rem;
+        z-index: 80;
+      }
+      .auth-overlay[hidden] {
+        display: none !important;
+      }
+      .auth-card {
+        width: min(500px, 92vw);
+        background: rgba(12, 18, 36, 0.92);
+        border-radius: 24px;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        padding: clamp(1.6rem, 3vw, 2.4rem);
+        display: grid;
+        gap: 1.4rem;
+        box-shadow: 0 42px 96px -44px rgba(5, 10, 25, 0.85);
+      }
+      .auth-tabs {
+        display: inline-flex;
+        padding: 0.25rem;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(15, 23, 42, 0.72);
+        gap: 0.3rem;
+      }
+      .auth-tabs button {
+        all: unset;
+        cursor: pointer;
+        padding: 0.55rem 1.2rem;
+        border-radius: 999px;
+        font-size: 0.9rem;
+        color: rgba(226, 232, 240, 0.7);
+      }
+      .auth-tabs button.active {
+        background: rgba(56, 189, 248, 0.2);
+        color: var(--text);
+      }
+      .auth-error {
+        padding: 0.65rem 0.85rem;
+        border-radius: 12px;
+        background: rgba(248, 113, 113, 0.12);
+        color: #fecaca;
+        font-size: 0.88rem;
+      }
+      .auth-note {
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+        .federated-divider {
+          display: grid;
+          grid-template-columns: 1fr auto 1fr;
+          align-items: center;
+          gap: 0.5rem;
+          color: rgba(148, 163, 184, 0.6);
+          font-size: 0.8rem;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+        }
+        .federated-divider::before,
+        .federated-divider::after {
+          content: "";
+          height: 1px;
+          background: rgba(148, 163, 184, 0.18);
+        }
+        .google-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.55rem;
+          border-radius: 14px;
+          padding: 0.75rem 1rem;
+          background: rgba(15, 23, 42, 0.9);
+          border: 1px solid rgba(148, 163, 184, 0.26);
+          color: var(--text);
+          font-weight: 600;
+          cursor: pointer;
+          transition: transform 0.18s ease, border 0.18s ease, background 0.18s ease;
+        }
+        .google-btn:hover {
+          transform: translateY(-1px);
+          border-color: rgba(148, 163, 184, 0.45);
+        }
+        .google-btn .icon {
+          width: 20px;
+          height: 20px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          background: #fff;
+        }
+        .google-btn .label {
+          display: inline-flex;
+          align-items: center;
+        }
+
+      @media (max-width: 1080px) {
+        .app-shell {
+          grid-template-columns: 78px 1fr;
+        }
+        .sidebar {
+          padding: 1.5rem 1rem;
+        }
+        .logo-text-group {
+          display: none;
+        }
+        .sidebar-nav button span.label {
+          display: none;
+        }
+      }
+      @media (max-width: 920px) {
+        .builder-grid {
+          grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        }
+        .workspace {
+          padding: 1.75rem 1.5rem 2rem;
+        }
+        .two-column {
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+        .workspace-hero {
+          gap: 1rem;
+        }
+        .solution-card {
+          flex: 1 1 100%;
+          align-items: center;
+        }
+        .solution-card .solution-copy {
+          text-align: center;
+        }
+        .solution-card .solution-cta {
+          justify-self: center;
+        }
+      }
+      @media (max-width: 720px) {
+        .app-shell {
+          grid-template-columns: 1fr;
+        }
+        .sidebar {
+          position: static;
+          height: auto;
+          flex-direction: row;
+          flex-wrap: wrap;
+          gap: 1rem;
+          border-right: none;
+          border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+          justify-content: space-between;
+        }
+        .workspace-header h1 {
+          font-size: 1.85rem;
+        }
+        .user-bar {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .workspace-actions {
+          flex-direction: column;
+        }
+        button {
+          width: 100%;
+        }
+          section.view {
+            padding: 1.2rem;
+          }
+          .controls-row {
+            flex-direction: column;
+            align-items: stretch;
+          }
+          .field-top-actions {
+            justify-content: flex-start;
+          }
+          .field-card {
+            padding: 1rem 1.05rem;
+          }
+      }
+    </style>
+      <script>
+        window.__FIREBASE_CONFIG =
+          window.__FIREBASE_CONFIG || {
+            apiKey: "YOUR_FIREBASE_API_KEY",
+            authDomain: "YOUR_FIREBASE_AUTH_DOMAIN",
+            projectId: "YOUR_FIREBASE_PROJECT_ID",
+            appId: "YOUR_FIREBASE_APP_ID"
+          };
+      </script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="sidebar-logo">
+          <img src="/assets/logo.svg" alt="Landscaper Workspace logo" class="logo-img" />
+          <div class="logo-text-group">
+            <span class="logo-title">Landscaper Workspace</span>
+            <span class="logo-subtitle">Crew Ops Platform</span>
+          </div>
+        </div>
+        <nav class="sidebar-nav">
+          <button data-view-target="fill" class="active"><span class="label">Fill Log</span></button>
+          <button data-view-target="submissions"><span class="label">Submissions</span></button>
+          <button data-view-target="builder"><span class="label">Form Builder</span></button>
+          <button data-view-target="packages"><span class="label">Packages</span></button>
+        </nav>
+        <div class="sidebar-footer">
+          Seamless logs &amp; billing for landscaping crews.
+        </div>
+      </aside>
+      <div class="workspace">
+        <header class="workspace-header">
+          <div>
+            <h1>Landscaping Work Log Builder</h1>
+            <p>
+              Design log forms, manage crews, and ship polished exports. Switch between builder, submissions,
+              and packages without leaving this workspace.
+            </p>
+          </div>
+          <div class="badge">Pilot Build</div>
+        </header>
+        <div class="user-bar" id="userBar" hidden>
+          <div>
+            <h4 id="userGreeting">Welcome back</h4>
+            <span class="label" id="workspaceSummary"></span>
+          </div>
+          <div class="user-bar-actions">
+            <span class="tag" id="packageTag"></span>
+            <button class="ghost small" type="button" id="logoutBtn">Logout</button>
+          </div>
+        </div>
+        <div class="workspace-hero">
+            <article
+              class="solution-card"
+              data-hero-target="fill"
+              data-theme="fill"
+              role="button"
+              tabindex="0"
+              aria-label="Open Fill Form"
+            >
+              <div class="solution-icon" aria-hidden="true">F</div>
+              <div class="solution-copy">
+                <h3>Fill Form</h3>
+                <p>Log crew visits in order, attach photos, and keep billing notes tight.</p>
+                <span class="solution-cta">Open Fill Form</span>
+              </div>
+            </article>
+            <article
+              class="solution-card"
+              data-hero-target="builder"
+              data-theme="builder"
+              role="button"
+              tabindex="0"
+              aria-label="Open Form Builder"
+            >
+              <div class="solution-icon" aria-hidden="true">B</div>
+              <div class="solution-copy">
+                <h3>Form Builder</h3>
+                <p>Create logic-ready templates, share polished links, and reuse across teams.</p>
+                <span class="solution-cta">Design a Form</span>
+              </div>
+            </article>
+            <article
+              class="solution-card"
+              data-hero-target="submissions"
+              data-theme="submissions"
+              role="button"
+              tabindex="0"
+              aria-label="View submissions table"
+            >
+              <div class="solution-icon" aria-hidden="true">T</div>
+              <div class="solution-copy">
+                <h3>Submissions Table</h3>
+                <p>Review field logs, flag issues, and export CSVs for billing in minutes.</p>
+                <span class="solution-cta">Open Submissions</span>
+              </div>
+            </article>
+            <article
+              class="solution-card"
+              data-hero-target="workflow"
+              data-theme="workflow"
+              role="button"
+              tabindex="0"
+              aria-label="Reports & automations coming soon"
+            >
+              <div class="solution-icon" aria-hidden="true">R</div>
+              <div class="solution-copy">
+                <h3>Reports & Automations</h3>
+                <p>Schedule client-ready reports and workflow approvals — coming soon.</p>
+                <span class="solution-cta">View roadmap</span>
+              </div>
+            </article>
+        </div>
+        <div class="workspace-actions">
+          <button class="primary" type="button" id="quickNewForm">+ New Form</button>
+          <button class="ghost" type="button" id="quickInviteTeam">Invite Team</button>
+          <button class="ghost" type="button" id="quickViewGuide">View Guide</button>
+        </div>
+        <nav class="workspace-tabs">
+          <button class="active" data-view="fill">Fill Form</button>
+          <button data-view="submissions">Submissions</button>
+          <button data-view="builder">Form Builder</button>
+        </nav>
+
+        <main class="workspace-main">
+          <section class="view active" id="fillView">
+            <div class="panel-header">
+              <h2>Record Visit</h2>
+              <p class="panel-subtitle">
+                Choose a published template, capture crew activity, and log customer-ready notes in seconds.
+              </p>
+            </div>
+              <div class="field-top-actions">
+                <button class="ghost small" type="button" id="fillHelpBtn">Quick Help</button>
+              </div>
+            <div class="two-column">
+              <div class="card">
+                <h3>Visit Details</h3>
+                <div class="form-branding" id="formBranding" hidden>
+                  <img id="formBrandingLogo" alt="Form logo" />
+                </div>
+                <div class="controls-row">
+                  <label style="flex:1 1 260px">
+                    <span>Form Template</span>
+                    <select id="formSelect"></select>
+                  </label>
+                  <div class="pill" id="formMeta">—</div>
+                </div>
+                <div id="fillAlerts"></div>
+                <form id="dynamicForm" class="field-group"></form>
+                <div class="controls-row">
+                  <button class="primary" type="submit" form="dynamicForm" id="submitEntry">Submit Visit</button>
+                  <button class="ghost" type="button" id="resetForm">Reset Fields</button>
+                </div>
+              </div>
+              <div class="card">
+                <h3>Sharing & Packages</h3>
+                <div class="share-card" id="shareCard" hidden>
+                  <div>
+                    <strong>Share Link</strong>
+                    <p class="panel-subtitle">
+                      Publish the template to collect responses on phones or embed it into your client portal.
+                    </p>
+                      <div class="tag" id="publishStatusTag"></div>
+                      <div class="tag soft" id="visibilityTag"></div>
+                      <p class="panel-subtitle" id="notificationSummary"></p>
+                      <div class="share-visibility">
+                        <span class="input-hint">Form visibility</span>
+                        <div class="segmented-control" id="shareVisibilityControl">
+                          <button type="button" data-share-visibility="public">Public</button>
+                          <button type="button" data-share-visibility="private">Private</button>
+                        </div>
+                      </div>
+                  </div>
+                  <div class="share-actions">
+                    <span class="share-link" id="shareLinkDisplay">—</span>
+                    <button class="ghost small" type="button" id="copyShareLink">Copy</button>
+                    <button class="ghost small" type="button" id="openShareLink">Open</button>
+                    <button class="ghost small" type="button" id="regenerateShare">New Link</button>
+                    <button class="ghost small" type="button" id="togglePublish">Publish</button>
+                  </div>
+                </div>
+                <div class="card" style="gap:0.6rem;">
+                  <strong>Tip</strong>
+                  <small>
+                    Share links respect your workspace package limits. Upgrade from the Packages tab to unlock more
+                    forms and responses.
+                  </small>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="view" id="submissionsView">
+            <div class="panel-header">
+              <h2>Form Submissions</h2>
+              <p class="panel-subtitle">
+                Review crew visits, filter responses, and export for billing or quality assurance.
+              </p>
+            </div>
+            <div class="controls-row">
+              <label style="flex:1 1 260px">
+                <span>Active Form</span>
+                <select id="formSelectSubmissions"></select>
+              </label>
+              <button class="primary" type="button" id="downloadCsv">Download CSV</button>
+            </div>
+            <div id="submissionTable"></div>
+          </section>
+
+          <section class="view" id="builderView">
+            <div class="panel-header">
+              <h2>Form Builder</h2>
+              <p class="panel-subtitle">
+                Drag components, configure logic, and preview the customer-facing form in real time. Publish when
+                you’re ready.
+              </p>
+            </div>
+            <div class="panel" style="margin-bottom:1.25rem; gap:1rem;">
+              <form id="builderForm" class="two-column">
+                <label>
+                  Form Name
+                  <input id="builderName" name="name" placeholder="Daily Service Log" required />
+                </label>
+                <label>
+                  Description
+                  <textarea id="builderDescription" name="description" rows="2" placeholder="Explain when crews should use this form"></textarea>
+                </label>
+                  <div class="panel-subtitle">
+                    Publish saves a new form and makes it available in the Fill Form tab for crews.
+                  </div>
+                  <div class="settings-grid">
+                    <fieldset class="settings-section">
+                      <legend>Branding</legend>
+                      <label>
+                        Logo URL
+                        <input type="url" id="builderLogoUrl" name="logoUrl" placeholder="https://cdn.example.com/form-logo.png" />
+                        <span class="input-hint">Shown on crew fill view and public form.</span>
+                      </label>
+                    </fieldset>
+                    <fieldset class="settings-section">
+                      <legend>Email Notifications</legend>
+                      <label class="toggle-row">
+                        <input type="checkbox" id="builderNotifyEnabled" />
+                        <span>Send an email for each submission</span>
+                      </label>
+                      <label>
+                        Recipients
+                        <input type="text" id="builderNotifyRecipients" placeholder="owner@company.com, manager@company.com" />
+                        <span class="input-hint">Separate multiple addresses with commas.</span>
+                      </label>
+                      <label>
+                        Subject
+                        <input type="text" id="builderNotifySubject" placeholder="New submission from {{formName}}" />
+                      </label>
+                      <label>
+                        Message
+                        <textarea id="builderNotifyMessage" rows="3" placeholder="Add an optional message. Tokens: {{formName}}, {{submissionId}}."></textarea>
+                      </label>
+                    </fieldset>
+                    <fieldset class="settings-section">
+                      <legend>Access</legend>
+                      <div class="segmented-control" id="visibilityControl">
+                        <button type="button" data-visibility="public" class="active">Public</button>
+                        <button type="button" data-visibility="private">Private</button>
+                      </div>
+                      <span class="input-hint">Public forms shareable via link. Private forms stay inside your workspace.</span>
+                    </fieldset>
+                  </div>
+                <div class="controls-row">
+                  <button class="primary" type="submit">Publish Form</button>
+                  <button class="ghost" type="button" id="resetBuilder">Reset Builder</button>
+                </div>
+              </form>
+              <div id="builderAlerts"></div>
+            </div>
+
+            <div class="builder-grid">
+                <div class="panel">
+                  <div class="panel-header panel-header--split">
+                    <div>
+                      <h3>Field Library</h3>
+                      <p class="panel-subtitle">
+                        Choose a category, then tap a tile to add it to your form canvas.
+                      </p>
+                    </div>
+                  </div>
+                  <div class="palette-tabs" id="paletteTabs"></div>
+                  <div class="field-palette" id="fieldPalette"></div>
+                  <div class="tip-card">
+                    <strong style="font-size:0.9rem;">Tip</strong>
+                    <span class="input-hint">Drag fields inside the canvas to reorder, or click a field to edit it in the inspector.</span>
+                  </div>
+                </div>
+                <div class="panel">
+                  <div class="panel-header">
+                    <h3>Field Canvas</h3>
+                    <p class="panel-subtitle">
+                      Reorder fields with drag handles, click to edit settings, duplicate, or remove.
+                    </p>
+                  </div>
+                  <div id="builderCanvas" class="builder-canvas builder-canvas-empty">
+                    <div class="builder-canvas-empty">
+                      Drop fields here or click a palette item to start your template.
+                    </div>
+                  </div>
+                </div>
+                <div class="panel" style="position:sticky; top:1rem;">
+                <div class="panel-header">
+                  <h3>Live Preview</h3>
+                  <p class="panel-subtitle">
+                    This is exactly what customers or crews will see. Toggle publish when it’s ready to share.
+                  </p>
+                </div>
+                <div class="preview-wrapper">
+                  <h4>Preview</h4>
+                  <form id="builderPreviewForm" class="preview-form"></form>
+                </div>
+              </div>
+              <div class="panel">
+                <div class="panel-header">
+                  <h3>Field Inspector</h3>
+                  <p class="panel-subtitle">
+                    Configure labels, placeholders, validation rules, and conditional logic for the selected field.
+                  </p>
+                </div>
+                <div id="fieldInspectorEmpty" class="inspector-empty">
+                  Select a field from the canvas to edit its settings.
+                </div>
+                <form id="fieldInspectorForm" class="inspector-grid" hidden>
+                  <label>
+                    Field Label
+                    <input name="label" placeholder="Service Date" />
+                  </label>
+                  <label>
+                    Field Key
+                    <input name="id" placeholder="serviceDate" />
+                    <small>Used for exports &amp; API payloads</small>
+                  </label>
+                  <label>
+                    Placeholder / Help Text
+                    <input name="placeholder" placeholder="Pick the service date" />
+                  </label>
+                <label data-image-url-group hidden>
+                  Image URL
+                  <input name="imageUrl" placeholder="https://cdn.example.com/photo.jpg" />
+                  <small>Shown inside the form preview and crew-facing view.</small>
+                </label>
+                <label data-upload-accept-group hidden>
+                  Allowed File Types (comma separated)
+                  <input name="accepts" placeholder="image/png,image/jpeg,image/webp" />
+                  <small>Leave blank to accept any file type.</small>
+                </label>
+                <label data-upload-multiple-group hidden class="toggle-row">
+                  <input type="checkbox" name="multiple" value="true" />
+                  <span>Allow multiple files</span>
+                </label>
+                  <label>
+                    Field Type
+                    <select name="type">
+                      <option value="text">Short Text</option>
+                      <option value="textarea">Long Text</option>
+                      <option value="heading">Heading</option>
+                      <option value="paragraph">Rich Text Block</option>
+                      <option value="select">Dropdown</option>
+                      <option value="single-choice">Single Choice</option>
+                      <option value="checkbox-group">Checkbox Group</option>
+                      <option value="date">Date</option>
+                      <option value="time">Time</option>
+                      <option value="number">Number</option>
+                      <option value="file">File Upload</option>
+                        <option value="image-upload">Image Upload</option>
+                      <option value="email">Email</option>
+                      <option value="tel">Phone</option>
+                      <option value="address">Address</option>
+                      <option value="divider">Divider</option>
+                      <option value="image">Image</option>
+                    </select>
+                  </label>
+                  <label>
+                    Required
+                    <select name="required">
+                      <option value="true">Required</option>
+                      <option value="false">Optional</option>
+                    </select>
+                  </label>
+                  <label data-options-group>
+                    Options (one per line)
+                    <textarea name="options" rows="4" placeholder="Mowing&#10;Pruning&#10;Edging"></textarea>
+                  </label>
+                </form>
+              </div>
+            </div>
+          </section>
+
+          <section class="view" id="packagesView">
+            <div class="panel-header">
+              <h2>Packages</h2>
+              <p class="panel-subtitle">
+                Compare workspace plans, limits, and features. Upgrades unlock more forms, submissions, and automations.
+              </p>
+            </div>
+            <div id="packagesList" class="two-column"></div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+      <div class="field-help-overlay" id="fieldHelpOverlay" hidden>
+        <div class="field-help-card">
+          <h3>Quick Field Tips</h3>
+          <ul>
+            <li>Pick a template, then log visit details in the order you walk the property.</li>
+            <li>Use the camera upload field to snap before/after photos directly from the phone.</li>
+            <li>Need to reset fast? Tap “Reset Fields” to clear the form without leaving the screen.</li>
+          </ul>
+          <button class="primary" type="button" id="fieldHelpCloseBtn">Got it</button>
+        </div>
+      </div>
+
+    <div class="auth-overlay" id="authOverlay" hidden>
+      <div class="auth-card">
+        <div class="auth-tabs">
+          <button class="active" type="button" data-auth-view="login">Sign In</button>
+          <button type="button" data-auth-view="signup">Create Account</button>
+        </div>
+        <div id="authError" hidden class="auth-error"></div>
+        <form id="loginForm">
+          <h2>Sign In</h2>
+          <label>
+            Email
+            <input type="email" name="email" placeholder="you@example.com" required />
+          </label>
+          <label>
+            Password
+            <input type="password" name="password" placeholder="••••••••" required minlength="6" />
+          </label>
+          <button class="primary" type="submit">Continue</button>
+            <div class="federated-divider"><span>or</span></div>
+            <button class="google-btn" type="button" id="googleLoginBtn">
+              <span class="icon">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" width="16" height="16" />
+              </span>
+              <span class="label">Continue with Google</span>
+            </button>
+            <p class="auth-note">Use Google to jump straight into your crew workspace—no password required.</p>
+        </form>
+        <form id="signupForm" hidden>
+          <h2>Create Your Workspace</h2>
+          <label>
+            Your Name
+            <input type="text" name="name" placeholder="Jordan Ellis" required />
+          </label>
+          <label>
+            Workspace Name
+            <input type="text" name="workspaceName" placeholder="Green Ways HQ" required />
+          </label>
+          <label>
+            Email
+            <input type="email" name="email" placeholder="owner@company.com" required />
+          </label>
+          <label>
+            Password
+            <input type="password" name="password" placeholder="Create a secure password" required minlength="6" />
+          </label>
+          <label>
+            Package
+            <select name="packageId" id="signupPackageSelect" required></select>
+          </label>
+          <p class="auth-note">Plan includes form limits per package. Upgrade anytime from the workspace.</p>
+          <button class="primary" type="submit">Start Workspace</button>
+        </form>
+      </div>
+    </div>
+
+    <template id="optionTemplate">
+      <option></option>
+    </template>
+
+    <script>
+      const API_BASE = `${window.location.origin}/api`;
+      const STORAGE_TOKEN_KEY = "landscaping-auth-token";
+      const formSelect = document.getElementById("formSelect");
+      const formSelectSubmissions = document.getElementById("formSelectSubmissions");
+      const dynamicForm = document.getElementById("dynamicForm");
+      const submissionTable = document.getElementById("submissionTable");
+      const downloadCsvBtn = document.getElementById("downloadCsv");
+      const formMeta = document.getElementById("formMeta");
+      const fillAlerts = document.getElementById("fillAlerts");
+      const resetFormBtn = document.getElementById("resetForm");
+      const shareCard = document.getElementById("shareCard");
+      const shareLinkDisplay = document.getElementById("shareLinkDisplay");
+      const copyShareLinkBtn = document.getElementById("copyShareLink");
+      const openShareLinkBtn = document.getElementById("openShareLink");
+        const regenerateShareBtn = document.getElementById("regenerateShare");
+        const togglePublishBtn = document.getElementById("togglePublish");
+        const publishStatusTag = document.getElementById("publishStatusTag");
+        const visibilityTag = document.getElementById("visibilityTag");
+        const notificationSummary = document.getElementById("notificationSummary");
+        const builderForm = document.getElementById("builderForm");
+        const builderNameInput = document.getElementById("builderName");
+        const builderDescriptionInput = document.getElementById("builderDescription");
+        const builderAlerts = document.getElementById("builderAlerts");
+        const tabs = document.querySelectorAll(".workspace-tabs button");
+        const sidebarButtons = document.querySelectorAll(".sidebar-nav button");
+        const paletteTabs = document.getElementById("paletteTabs");
+        const fieldPalette = document.getElementById("fieldPalette");
+        const builderCanvas = document.getElementById("builderCanvas");
+        const builderPreviewForm = document.getElementById("builderPreviewForm");
+        const builderLogoInput = document.getElementById("builderLogoUrl");
+        const builderNotifyToggle = document.getElementById("builderNotifyEnabled");
+        const builderNotifyRecipientsInput = document.getElementById("builderNotifyRecipients");
+        const builderNotifySubjectInput = document.getElementById("builderNotifySubject");
+        const builderNotifyMessageInput = document.getElementById("builderNotifyMessage");
+        const visibilityControl = document.getElementById("visibilityControl");
+        const visibilityButtons = visibilityControl ? visibilityControl.querySelectorAll("[data-visibility]") : [];
+const shareVisibilityControl = document.getElementById("shareVisibilityControl");
+const shareVisibilityButtons = shareVisibilityControl
+  ? shareVisibilityControl.querySelectorAll("[data-share-visibility]")
+  : [];
+        const fieldInspectorForm = document.getElementById("fieldInspectorForm");
+        const fieldInspectorEmpty = document.getElementById("fieldInspectorEmpty");
+        const resetBuilderBtn = document.getElementById("resetBuilder");
+        const packagesList = document.getElementById("packagesList");
+        const quickNewFormBtn = document.getElementById("quickNewForm");
+        const quickInviteTeamBtn = document.getElementById("quickInviteTeam");
+        const quickViewGuideBtn = document.getElementById("quickViewGuide");
+        const formBranding = document.getElementById("formBranding");
+        const formBrandingLogo = document.getElementById("formBrandingLogo");
+        const googleLoginBtn = document.getElementById("googleLoginBtn");
+const fillHelpBtn = document.getElementById("fillHelpBtn");
+const fieldHelpOverlay = document.getElementById("fieldHelpOverlay");
+const fieldHelpCloseBtn = document.getElementById("fieldHelpCloseBtn");
+const heroCards = document.querySelectorAll(".solution-card[data-hero-target]");
+
+      const FIELD_LIBRARY = [
+        {
+          id: "basic",
+          label: "Basic",
+          items: [
+            { type: "heading", label: "Heading", description: "Introduce new sections with a bold title.", icon: "H1", status: "live" },
+            { type: "paragraph", label: "Paragraph", description: "Add contextual copy or guidelines.", icon: "¶", status: "live" },
+            { type: "text", label: "Short Text", description: "Single-line responses for names or titles.", icon: "Aa", status: "live" },
+            { type: "textarea", label: "Long Text", description: "Collect detailed notes or feedback.", icon: "✎", status: "live" },
+            { type: "email", label: "Email", description: "Validate email responses instantly.", icon: "@", status: "live" },
+            { type: "tel", label: "Phone", description: "Capture phone numbers with formatting.", icon: "☎", status: "live" },
+            { type: "address", label: "Address", description: "Street, city, and postal details.", icon: "⌂", status: "live" },
+            { type: "select", label: "Dropdown", description: "Pick a single option from a list.", icon: "▾", status: "live" },
+            { type: "single-choice", label: "Single Choice", description: "Radio buttons with exclusive selections.", icon: "◉", status: "live" },
+            { type: "checkbox-group", label: "Multiple Choice", description: "Checkbox group for multiple selections.", icon: "☑", status: "live" },
+            { type: "number", label: "Number", description: "Numeric responses with validation.", icon: "#", status: "live" },
+            { type: "date", label: "Date Picker", description: "Schedule visits and due dates.", icon: "📅", status: "live" },
+            { type: "time", label: "Time", description: "Log arrival, departure, or durations.", icon: "⏱", status: "live" },
+            { type: "full-name", label: "Full Name", description: "First and last name collection.", icon: "👤", status: "soon" },
+            { type: "appointment", label: "Appointment", description: "Schedule date & time slots.", icon: "📆", status: "soon" }
+          ]
+        },
+        {
+          id: "payments",
+          label: "Payments",
+          items: [
+            { type: "product-list", label: "Product List", description: "Sell items and collect payments.", icon: "🛒", status: "soon" }
+          ]
+        },
+          {
+            id: "widgets",
+            label: "Widgets",
+            items: [
+              { type: "image", label: "Image Block", description: "Display a branded or instructional image.", icon: "🖼", status: "live" },
+              {
+                type: "image-upload",
+                label: "Image Upload",
+                description: "Let crew members attach site photos or receipts.",
+                icon: "📸",
+                status: "live"
+              },
+              { type: "file", label: "File Upload", description: "Collect PDFs or other supporting documents.", icon: "📁", status: "live" },
+              { type: "signature", label: "Signature", description: "Collect digital sign-off in the field.", icon: "✍", status: "soon" },
+              { type: "fill-blank", label: "Fill in the Blank", description: "Structured statements with blanks.", icon: "▭", status: "soon" },
+              { type: "captcha", label: "Captcha", description: "Stop spam with verification.", icon: "🔐", status: "soon" },
+              { type: "spinner", label: "Spinner", description: "Number steppers for quick adjustments.", icon: "⟳", status: "soon" }
+            ]
+          },
+        {
+          id: "survey",
+          label: "Survey Elements",
+          items: [
+            { type: "input-table", label: "Input Table", description: "Collect multi-row, multi-column data.", icon: "▦", status: "soon" },
+            { type: "star-rating", label: "Star Rating", description: "Quick satisfaction scoring.", icon: "★", status: "soon" },
+            { type: "scale-rating", label: "Scale Rating", description: "Likert scales for feedback.", icon: "↔", status: "soon" }
+          ]
+        },
+        {
+          id: "page",
+          label: "Page Elements",
+          items: [
+            { type: "divider", label: "Divider", description: "Visual break between sections.", icon: "─", status: "live" },
+            { type: "section-collapse", label: "Section Collapse", description: "Progressively disclose content.", icon: "▾▴", status: "soon" },
+            { type: "page-break", label: "Page Break", description: "Split long forms into pages.", icon: "⤵", status: "soon" },
+            { type: "submit-button", label: "Submit Button", description: "Custom CTA for form submissions.", icon: "➡", status: "soon" }
+          ]
+        }
+      ];
+
+        const FIELD_BLUEPRINT_INDEX = FIELD_LIBRARY.reduce((acc, category) => {
+          category.items.forEach((item) => {
+            acc[item.type] = item;
+          });
+          return acc;
+        }, {});
+        const STATIC_FIELD_TYPES = new Set(["heading", "paragraph", "divider", "image"]);
+        const OPTION_FIELD_TYPES = new Set(["select", "checkbox-group", "single-choice"]);
+        const FILE_FIELD_TYPES = new Set(["file", "image-upload"]);
+
+        function defaultBuilderSettings() {
+          return {
+            visibility: "public",
+            autoCalculateDuration: { startField: "startTime", endField: "endTime" },
+            branding: { logoUrl: "" },
+            notifications: {
+              enabled: false,
+              recipients: [],
+              subject: "New submission from {{formName}}",
+              message: "A new submission was received for {{formName}}.",
+              includeSubmission: true
+            }
+          };
+        }
+
+      const authOverlay = document.getElementById("authOverlay");
+      const authTabButtons = document.querySelectorAll("[data-auth-view]");
+      const loginForm = document.getElementById("loginForm");
+      const signupForm = document.getElementById("signupForm");
+      const authError = document.getElementById("authError");
+      const signupPackageSelect = document.getElementById("signupPackageSelect");
+      const logoutBtn = document.getElementById("logoutBtn");
+      const userBar = document.getElementById("userBar");
+      const userGreeting = document.getElementById("userGreeting");
+      const workspaceSummary = document.getElementById("workspaceSummary");
+      const packageTag = document.getElementById("packageTag");
+
+      const state = {
+        auth: {
+          token: null,
+          user: null,
+          workspace: null,
+          package: null
+        },
+        packages: [],
+        forms: [],
+        activeFormId: null,
+        submissions: [],
+        dependencyMap: {},
+        fieldRefs: new Map(),
+        currentValues: {},
+        builder: {
+          fields: [],
+          selectedFieldId: null,
+          sortable: null,
+            paletteCategory: FIELD_LIBRARY[0]?.id ?? "basic",
+            settings: defaultBuilderSettings()
+        }
+      };
+
+      (async function init() {
+        setupEventListeners();
+        renderPaletteTabs();
+        renderFieldPalette();
+        renderBuilderFields();
+  resetBuilder();
+        await loadPackages();
+        await bootstrapAuth();
+      })().catch((error) => {
+        console.error("Initialization error:", error);
+        showAuthOverlay();
+      });
+
+      function setupEventListeners() {
+        tabs.forEach((tab) => tab.addEventListener("click", () => setView(tab.dataset.view)));
+        sidebarButtons.forEach((btn) => {
+          btn.addEventListener("click", () => setView(btn.dataset.viewTarget || "fill"));
+        });
+        formSelect.addEventListener("change", () => setActiveForm(formSelect.value));
+        formSelectSubmissions.addEventListener("change", () => {
+          setActiveForm(formSelectSubmissions.value);
+          setView("submissions");
+        });
+        dynamicForm.addEventListener("submit", handleSubmitVisit);
+        dynamicForm.addEventListener("input", handleFieldChange);
+        resetFormBtn.addEventListener("click", () => {
+          const form = getActiveForm();
+          if (!form) return;
+          renderFormFill(form);
+          showFillAlert("Form reset.", "success");
+        });
+        downloadCsvBtn.addEventListener("click", downloadCsv);
+        copyShareLinkBtn.addEventListener("click", handleCopyShareLink);
+        openShareLinkBtn.addEventListener("click", handleOpenShareLink);
+        regenerateShareBtn.addEventListener("click", handleRegenerateShare);
+        togglePublishBtn.addEventListener("click", handleTogglePublish);
+        quickNewFormBtn?.addEventListener("click", startNewFormFlow);
+        quickInviteTeamBtn?.addEventListener("click", handleInviteTeam);
+        quickViewGuideBtn?.addEventListener("click", () => {
+          setView("builder");
+          showBuilderAlert("Tip: Drag a field from the palette, select it, then fine-tune it in the inspector.", "success");
+        });
+        builderCanvas.addEventListener("click", (event) => {
+          const item = event.target.closest("[data-field-id]");
+          if (!item) return;
+          selectBuilderField(item.dataset.fieldId);
+        });
+        fieldInspectorForm.addEventListener("input", handleInspectorInput);
+        fieldInspectorForm.addEventListener("change", handleInspectorInput);
+        builderForm.addEventListener("submit", handleBuilderSubmit);
+        resetBuilderBtn.addEventListener("click", resetBuilder);
+          builderLogoInput?.addEventListener("input", handleBrandingInput);
+          builderNotifyToggle?.addEventListener("change", handleNotificationToggle);
+          builderNotifyRecipientsInput?.addEventListener("input", handleNotificationRecipients);
+          builderNotifySubjectInput?.addEventListener("input", handleNotificationSubject);
+          builderNotifyMessageInput?.addEventListener("input", handleNotificationMessage);
+          visibilityButtons.forEach((button) => {
+            button.addEventListener("click", () => setBuilderVisibility(button.dataset.visibility));
+          });
+          shareVisibilityButtons.forEach((button) => {
+            button.addEventListener("click", () => updateFormVisibility(button.dataset.shareVisibility));
+          });
+        authTabButtons.forEach((button) => {
+          button.addEventListener("click", () => showAuthView(button.dataset.authView));
+        });
+        loginForm.addEventListener("submit", handleLogin);
+        signupForm.addEventListener("submit", handleSignup);
+        logoutBtn.addEventListener("click", handleLogout);
+          updateNotificationFieldsState();
+          syncVisibilityControls();
+          googleLoginBtn?.addEventListener("click", handleGoogleLogin);
+          fillHelpBtn?.addEventListener("click", openFieldHelp);
+          fieldHelpCloseBtn?.addEventListener("click", closeFieldHelp);
+          fieldHelpOverlay?.addEventListener("click", (event) => {
+            if (event.target === fieldHelpOverlay) closeFieldHelp();
+          });
+          heroCards.forEach((card) => {
+            card.addEventListener("click", () => handleHeroCard(card.dataset.heroTarget));
+            card.addEventListener("keydown", (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                handleHeroCard(card.dataset.heroTarget);
+              }
+            });
+          });
+      }
+
+      function startNewFormFlow() {
+        setView("builder");
+        resetBuilder();
+        requestAnimationFrame(() => builderNameInput.focus());
+        showBuilderAlert("Name your form, then drag fields from the palette to get started.", "success");
+      }
+
+      function handleInviteTeam() {
+        const subject = encodeURIComponent("Join our Landscaping Workspace");
+        const body = encodeURIComponent(
+          "Hi team,\n\nJoin me on the Landscaping Workspace so we can capture jobs, track visits, and export billing reports together.\n\nSign up here: https://app.landscaperworkspace.local/signup\n\nThanks!"
+        );
+        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+      }
+
+        function handleHeroCard(target) {
+          switch (target) {
+            case "fill":
+              setView("fill");
+              dynamicForm.scrollIntoView({ behavior: "smooth", block: "start" });
+              break;
+            case "builder":
+              setView("builder");
+              showBuilderAlert("Drag fields from the palette to shape your form template.", "success");
+              break;
+            case "submissions":
+              setView("submissions");
+              break;
+            case "workflow":
+              setView("builder");
+              showBuilderAlert(
+                "Reports & automations are on the roadmap. For now, export submissions or share requests.",
+                "success"
+              );
+              break;
+            default:
+              break;
+          }
+        }
+
+        function openFieldHelp() {
+          if (!fieldHelpOverlay) return;
+          fieldHelpOverlay.hidden = false;
+          fieldHelpOverlay.style.display = "flex";
+          fieldHelpCloseBtn?.focus();
+          window.addEventListener("keydown", handleFieldHelpKeydown);
+        }
+
+        function closeFieldHelp() {
+          if (!fieldHelpOverlay) return;
+          fieldHelpOverlay.hidden = true;
+          fieldHelpOverlay.style.display = "none";
+          fillHelpBtn?.focus();
+          window.removeEventListener("keydown", handleFieldHelpKeydown);
+        }
+
+        function handleFieldHelpKeydown(event) {
+          if (event.key === "Escape") {
+            closeFieldHelp();
+          }
+        }
+
+        function handleBrandingInput() {
+          const url = builderLogoInput?.value?.trim() ?? "";
+          state.builder.settings.branding.logoUrl = url;
+          renderBuilderPreview();
+        }
+
+        function handleNotificationToggle() {
+          const enabled = Boolean(builderNotifyToggle?.checked);
+          state.builder.settings.notifications.enabled = enabled;
+          updateNotificationFieldsState();
+          renderBuilderPreview();
+        }
+
+        function handleNotificationRecipients() {
+          const recipients = parseRecipientList(builderNotifyRecipientsInput?.value ?? "");
+          state.builder.settings.notifications.recipients = recipients;
+          renderBuilderPreview();
+        }
+
+        function handleNotificationSubject() {
+          state.builder.settings.notifications.subject = builderNotifySubjectInput?.value ?? "";
+          renderBuilderPreview();
+        }
+
+        function handleNotificationMessage() {
+          state.builder.settings.notifications.message = builderNotifyMessageInput?.value ?? "";
+        }
+
+        function updateNotificationFieldsState() {
+          const enabled = state.builder.settings.notifications.enabled;
+          const controls = [
+            builderNotifyRecipientsInput,
+            builderNotifySubjectInput,
+            builderNotifyMessageInput
+          ].filter(Boolean);
+          controls.forEach((input) => {
+            input.disabled = !enabled;
+            input.closest("label")?.classList.toggle("disabled", !enabled);
+          });
+        }
+
+        function parseRecipientList(raw) {
+          return String(raw)
+            .split(/[,;\n]/)
+            .map((value) => value.trim())
+            .filter(Boolean);
+        }
+
+        function syncVisibilityControls() {
+          if (!visibilityButtons?.length) return;
+          const current = state.builder.settings.visibility || "public";
+          visibilityButtons.forEach((button) => {
+            const isActive = button.dataset.visibility === current;
+            button.classList.toggle("active", isActive);
+            button.setAttribute("aria-pressed", isActive ? "true" : "false");
+          });
+        }
+
+        function setBuilderVisibility(nextVisibility) {
+          const normalized = nextVisibility === "private" ? "private" : "public";
+          state.builder.settings.visibility = normalized;
+          syncVisibilityControls();
+          renderBuilderPreview();
+        }
+
+        let firebaseAuthBootstrap = null;
+
+        async function ensureFirebaseAuth() {
+          if (firebaseAuthBootstrap) {
+            return firebaseAuthBootstrap;
+          }
+          firebaseAuthBootstrap = (async () => {
+            const config = window.__FIREBASE_CONFIG;
+            if (
+              !config ||
+              !config.apiKey ||
+              String(config.apiKey).toLowerCase().includes("your_firebase_api_key")
+            ) {
+              throw new Error(
+                "Configure Firebase keys by setting window.__FIREBASE_CONFIG before using Google login."
+              );
+            }
+            const [{ initializeApp }, authModule] = await Promise.all([
+              import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"),
+              import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js")
+            ]);
+            const app = initializeApp(config);
+            const auth = authModule.getAuth(app);
+            auth.languageCode = "en";
+            const provider = new authModule.GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: "select_account" });
+            return { auth, provider, signInWithPopup: authModule.signInWithPopup };
+          })().catch((error) => {
+            firebaseAuthBootstrap = null;
+            throw error;
+          });
+          return firebaseAuthBootstrap;
+        }
+
+        async function handleGoogleLogin() {
+          if (!googleLoginBtn) return;
+          displayAuthError();
+          const label = googleLoginBtn.querySelector(".label");
+          const originalText = label ? label.textContent : "";
+          googleLoginBtn.disabled = true;
+          if (label) {
+            label.textContent = "Connecting…";
+          }
+          try {
+            const { auth, provider, signInWithPopup } = await ensureFirebaseAuth();
+            const credentials = await signInWithPopup(auth, provider);
+            const idToken = await credentials.user.getIdToken();
+            const response = await apiFetch(
+              "/auth/firebase",
+              {
+                method: "POST",
+                body: JSON.stringify({ idToken })
+              },
+              { skipAuth: true }
+            );
+            applyAuthResponse(response.data);
+            hideAuthOverlay();
+            await loadForms();
+          } catch (error) {
+            console.error("Google login error:", error);
+            let message;
+            if (error?.message?.includes("Configure Firebase")) {
+              message = "Set your Firebase keys in window.__FIREBASE_CONFIG before using Google login.";
+            } else if (error?.code === "auth/popup-closed-by-user") {
+              message = "Google sign-in was closed before completing.";
+            } else {
+              message = error.message || "Unable to sign in with Google.";
+            }
+            displayAuthError(message);
+          } finally {
+            googleLoginBtn.disabled = false;
+            if (label) {
+              label.textContent = originalText || "Continue with Google";
+            }
+          }
+        }
+
+      function renderPaletteTabs() {
+        if (!paletteTabs) return;
+        const activeCategory = state.builder.paletteCategory || FIELD_LIBRARY[0]?.id;
+        paletteTabs.innerHTML = FIELD_LIBRARY.map((category) => {
+          const isActive = category.id === activeCategory;
+          return `<button type="button" data-category="${category.id}" class="${isActive ? "active" : ""}">${category.label}</button>`;
+        }).join("");
+        paletteTabs.querySelectorAll("button").forEach((button) => {
+          button.addEventListener("click", () => {
+            const { category } = button.dataset;
+            if (!category || category === state.builder.paletteCategory) return;
+            state.builder.paletteCategory = category;
+            renderPaletteTabs();
+            renderFieldPalette();
+          });
+        });
+      }
+
+      function renderFieldPalette() {
+        if (!fieldPalette) return;
+        const activeCategory =
+          FIELD_LIBRARY.find((category) => category.id === state.builder.paletteCategory) ?? FIELD_LIBRARY[0];
+        if (!activeCategory) {
+          fieldPalette.innerHTML = `<div class="empty-state">No palette items found.</div>`;
+          return;
+        }
+        fieldPalette.innerHTML = activeCategory.items
+          .map((item) => {
+            const disabled = item.status !== "live";
+            const pill = disabled ? '<span class="palette-pill">Soon</span>' : "";
+            const actionLabel = disabled ? "Coming soon" : "Add to form";
+            return `
+              <article class="palette-card" data-field-type="${item.type}" data-disabled="${disabled}">
+                <header>
+                  <span class="palette-icon">${item.icon || "⋯"}</span>
+                  <h4>${item.label}</h4>
+                  ${pill}
+                </header>
+                <p>${item.description}</p>
+                <footer>
+                  <button class="primary palette-add" type="button" ${disabled ? "disabled" : ""}>${actionLabel}</button>
+                </footer>
+              </article>
+            `;
+          })
+          .join("");
+        fieldPalette.querySelectorAll(".palette-add").forEach((button) => {
+          if (button.disabled) return;
+          button.addEventListener("click", (event) => {
+            const card = event.currentTarget.closest(".palette-card");
+            if (!card) return;
+            const fieldType = card.dataset.fieldType;
+            const blueprint = FIELD_BLUEPRINT_INDEX[fieldType];
+            addBuilderField(blueprint);
+          });
+        });
+      }
+
+      function createFieldFromBlueprint(blueprint) {
+        if (!blueprint) return null;
+        const timestamp = Date.now();
+        const fieldId = `${blueprint.type}-${timestamp}`;
+        const baseField = {
+          id: fieldId,
+          type: blueprint.type,
+          label: blueprint.label,
+          required: blueprint.required ?? false,
+          placeholder: blueprint.placeholder ?? "",
+          options: Array.isArray(blueprint.options) ? normalizeFieldOptions(blueprint.options) : undefined,
+          kind: blueprint.label
+        };
+
+        switch (blueprint.type) {
+          case "text":
+            baseField.placeholder ||= "Enter a short response";
+            break;
+          case "textarea":
+            baseField.placeholder ||= "Add more detail here";
+            break;
+          case "email":
+            baseField.placeholder ||= "you@example.com";
+            break;
+          case "tel":
+            baseField.placeholder ||= "(555) 123-4567";
+            break;
+          case "address":
+            baseField.placeholder ||= "Street, City, State";
+            break;
+          case "select":
+            baseField.options = normalizeFieldOptions(blueprint.options ?? ["Option 1", "Option 2", "Option 3"]);
+            baseField.placeholder ||= "Choose an option";
+            break;
+          case "single-choice":
+            baseField.options = normalizeFieldOptions(blueprint.options ?? ["Option 1", "Option 2"]);
+            baseField.required = true;
+            baseField.placeholder ||= "Select one option";
+            break;
+          case "checkbox-group":
+            baseField.options = normalizeFieldOptions(blueprint.options ?? ["Option 1", "Option 2", "Option 3"]);
+            baseField.placeholder ||= "Select all that apply";
+            break;
+          case "number":
+            baseField.placeholder ||= "0";
+            break;
+          case "paragraph":
+            baseField.placeholder ||= "Add descriptive text for this section.";
+            baseField.displayOnly = true;
+            break;
+          case "heading":
+            baseField.placeholder ||= "Explain what happens in this section.";
+            baseField.displayOnly = true;
+            break;
+          case "image":
+              baseField.placeholder ||= "Describe what this image illustrates.";
+              baseField.imageUrl = blueprint.imageUrl ?? "";
+            baseField.displayOnly = true;
+            break;
+          case "divider":
+            baseField.displayOnly = true;
+            break;
+          case "file":
+            baseField.placeholder ||= "Upload files";
+            baseField.accepts = Array.isArray(blueprint.accepts) ? blueprint.accepts : [];
+            baseField.multiple = blueprint.multiple ?? false;
+            break;
+          case "image-upload":
+            baseField.placeholder ||= "Upload site photos or receipts.";
+            baseField.accepts =
+              Array.isArray(blueprint.accepts) && blueprint.accepts.length
+                ? blueprint.accepts
+                : ["image/png", "image/jpeg", "image/webp"];
+            baseField.multiple = blueprint.multiple ?? false;
+            break;
+        }
+        baseField.displayOnly = STATIC_FIELD_TYPES.has(baseField.type) || Boolean(baseField.displayOnly);
+        if (baseField.displayOnly) {
+          baseField.required = false;
+        }
+        return baseField;
+      }
+
+      async function bootstrapAuth() {
+        const savedToken = localStorage.getItem(STORAGE_TOKEN_KEY);
+        if (savedToken) {
+          state.auth.token = savedToken;
+          try {
+            await refreshSession();
+            hideAuthOverlay();
+            await loadForms();
+            return;
+          } catch (error) {
+            console.warn("Session refresh failed:", error);
+            clearAuth();
+          }
+        }
+        showAuthOverlay("login");
+      }
+
+      async function refreshSession() {
+        const response = await apiFetch("/auth/me");
+        const { data } = response;
+        if (!data) throw new Error("Invalid session response");
+        state.auth.token = data.token || state.auth.token;
+        state.auth.user = data.user;
+        state.auth.workspace = data.workspace;
+        state.auth.package = data.package;
+        if (state.auth.token) {
+          localStorage.setItem(STORAGE_TOKEN_KEY, state.auth.token);
+        }
+        renderUserBar();
+        renderPackagePanels();
+      }
+
+      function renderUserBar() {
+        const { user, workspace, package: currentPackage } = state.auth;
+        if (!user || !workspace) {
+          userBar.hidden = true;
+          return;
+        }
+        const displayName = user.name || user.email;
+        userGreeting.textContent = `Welcome, ${displayName}`;
+        workspaceSummary.textContent = workspace.name || workspace.slug;
+        if (currentPackage) {
+          const limits = [];
+          if (currentPackage.formLimit) limits.push(`${currentPackage.formLimit} forms`);
+          if (currentPackage.submissionLimit) limits.push(`${currentPackage.submissionLimit} submissions/mo`);
+          const extra = limits.length ? ` • ${limits.join(" · ")}` : " • Unlimited";
+          packageTag.textContent = `${currentPackage.name}${extra}`;
+        } else {
+          packageTag.textContent = "Package pending";
+        }
+        userBar.hidden = false;
+      }
+
+      function clearAuth() {
+        state.auth = {
+          token: null,
+          user: null,
+          workspace: null,
+          package: null
+        };
+        localStorage.removeItem(STORAGE_TOKEN_KEY);
+        userBar.hidden = true;
+        state.forms = [];
+        state.activeFormId = null;
+        state.submissions = [];
+        dynamicForm.innerHTML = `<div class="empty-state">Sign in to manage forms.</div>`;
+        submissionTable.innerHTML = "";
+        updateSharePanel(null);
+      }
+
+      async function loadPackages() {
+        try {
+          const response = await apiFetch("/packages", {}, { skipAuth: true });
+          state.packages = response.data ?? [];
+          renderPackagePanels();
+          renderPackageOptions();
+        } catch (error) {
+          console.warn("Unable to load packages:", error);
+        }
+      }
+
+      function renderPackagePanels() {
+        if (!packagesList) return;
+        if (!state.packages.length) {
+          packagesList.innerHTML = `<div class="empty-state">Packages will appear once loaded.</div>`;
+          return;
+        }
+        packagesList.innerHTML = state.packages
+          .map(
+            (pkg) => `
+              <div class="card">
+                <h3>${escapeHtml(pkg.name)}</h3>
+                <div>${escapeHtml(pkg.description || "")}</div>
+                <strong>$${pkg.priceMonthly ?? 0}/month</strong>
+                <small>
+                  ${pkg.formLimit ? `${pkg.formLimit} forms` : "Unlimited forms"} •
+                  ${pkg.submissionLimit ? `${pkg.submissionLimit} submissions/mo` : "Unlimited submissions"}
+                </small>
+                <button class="primary small" type="button" disabled>Upgrade coming soon</button>
+              </div>
+            `
+          )
+          .join("");
+      }
+
+      function renderPackageOptions() {
+        if (!signupPackageSelect) return;
+        signupPackageSelect.innerHTML = (state.packages ?? [])
+          .map(
+            (pkg) =>
+              `<option value="${pkg.id}">${pkg.name} — ${pkg.description}${
+                pkg.priceMonthly ? ` ($${pkg.priceMonthly}/mo)` : ""
+              }</option>`
+          )
+          .join("");
+        if (state.packages.length) {
+          signupPackageSelect.value = state.packages[0].id;
+        }
+      }
+
+      async function loadForms() {
+        if (!state.auth.token) return;
+        try {
+            const body = await apiFetch("/forms?includeStats=true");
+            state.forms = (body.data ?? []).map((form) => normalizeForm(form));
+          if (!state.activeFormId && state.forms.length) {
+            state.activeFormId = state.forms[0].id;
+          }
+          renderFormSelects();
+          renderFormFill(getActiveForm());
+          await loadSubmissions();
+        } catch (error) {
+          console.error("Load forms error:", error);
+          showFillAlert(error.message ?? "Unable to load forms.", "error");
+        }
+      }
+
+      function getActiveForm() {
+        return state.forms.find((form) => form.id === state.activeFormId) ?? null;
+      }
+
+      async function loadSubmissions() {
+        const form = getActiveForm();
+        if (!form) {
+          submissionTable.innerHTML = "";
+          return;
+        }
+        try {
+          const body = await apiFetch(`/forms/${form.id}/submissions`);
+          state.submissions = body.data ?? [];
+          renderSubmissions();
+        } catch (error) {
+          console.error("Load submissions error:", error);
+          submissionTable.innerHTML = `<div class="alert error">Unable to load submissions.</div>`;
+        }
+      }
+
+      function setView(view) {
+        tabs.forEach((tab) => tab.classList.toggle("active", tab.dataset.view === view));
+        sidebarButtons.forEach((btn) => btn.classList.toggle("active", btn.dataset.viewTarget === view));
+        document.querySelectorAll("section.view").forEach((section) => {
+          section.classList.toggle("active", section.id.toLowerCase().includes(view));
+        });
+        if (view === "submissions") {
+          renderSubmissions();
+        }
+        if (view === "builder") {
+          renderBuilderFields();
+        }
+        if (view === "packages") {
+          renderPackagePanels();
+        }
+      }
+
+      function setActiveForm(formId) {
+        if (!formId) return;
+        state.activeFormId = formId;
+        renderFormSelects();
+        const form = getActiveForm();
+        renderFormFill(form);
+        loadSubmissions();
+      }
+
+        function renderFormSelects() {
+          const options = state.forms
+            .map((form) => {
+              const lock = form.visibility === "private" ? " 🔒" : "";
+              return `<option value="${form.id}">${escapeHtml(form.name)}${lock}</option>`;
+            })
+            .join("");
+        formSelect.innerHTML = options;
+        formSelectSubmissions.innerHTML = options;
+        if (state.activeFormId) {
+          formSelect.value = state.activeFormId;
+          formSelectSubmissions.value = state.activeFormId;
+          const form = getActiveForm();
+          if (form) {
+            const statusLabel = form.isPublished ? "Published" : "Draft";
+              const visibilityLabel = form.visibility === "private" ? "Private" : "Public";
+            const submissionsLabel =
+              typeof form.submissionCount === "number" ? ` • ${form.submissionCount} submissions` : "";
+            formMeta.textContent = `v${form.version} • ${statusLabel} • Updated ${new Date(
+              form.updatedAt
+              ).toLocaleString()} • ${visibilityLabel}${submissionsLabel}`;
+          } else {
+            formMeta.textContent = "—";
+          }
+        }
+      }
+
+      function renderFormFill(form) {
+        state.fieldRefs = new Map();
+        state.currentValues = {};
+        dynamicForm.innerHTML = "";
+        if (!form) {
+          dynamicForm.innerHTML = `<div class="empty-state">No form selected.</div>`;
+          updateSharePanel(null);
+          return;
+        }
+          const logoUrl = form.settings?.branding?.logoUrl?.trim();
+          if (formBranding && formBrandingLogo) {
+            if (logoUrl) {
+              formBrandingLogo.src = logoUrl;
+              formBranding.hidden = false;
+            } else {
+              formBranding.hidden = true;
+              formBrandingLogo.removeAttribute("src");
+            }
+          }
+        if (!form.fields?.length) {
+          dynamicForm.innerHTML = `<div class="empty-state">This form has no fields yet.</div>`;
+          updateSharePanel(form);
+          return;
+        }
+        state.dependencyMap = buildDependencyMap(form);
+        form.fields.forEach((field) => {
+          const card = createFillField(field, form);
+          dynamicForm.appendChild(card);
+          if (field.defaultValue !== undefined) {
+            setFieldValue(field, field.defaultValue);
+          }
+        });
+        updateSharePanel(form);
+          const firstInteractive = dynamicForm.querySelector("input, select, textarea");
+          firstInteractive?.focus({ preventScroll: true });
+      }
+
+      function createFillField(field, form) {
+        if (STATIC_FIELD_TYPES.has(field.type) || field.displayOnly) {
+          const staticBlock = document.createElement("div");
+          staticBlock.className = "field-static";
+          staticBlock.dataset.fieldId = field.id;
+          switch (field.type) {
+            case "heading": {
+              const heading = document.createElement("h3");
+              heading.textContent = field.label || "Section Heading";
+              staticBlock.appendChild(heading);
+              if (field.placeholder) {
+                const desc = document.createElement("p");
+                desc.textContent = field.placeholder;
+                staticBlock.appendChild(desc);
+              }
+              break;
+            }
+            case "paragraph": {
+              const paragraph = document.createElement("p");
+              paragraph.textContent = field.placeholder || field.label || "Add supporting copy here.";
+              staticBlock.appendChild(paragraph);
+              break;
+            }
+            case "image": {
+                if (field.imageUrl) {
+                  const img = document.createElement("img");
+                  img.src = field.imageUrl;
+                  img.alt = field.label || "Form image";
+                  staticBlock.appendChild(img);
+                  if (field.placeholder) {
+                    const caption = document.createElement("p");
+                    caption.textContent = field.placeholder;
+                    staticBlock.appendChild(caption);
+                  }
+                } else {
+                  const placeholder = document.createElement("div");
+                  placeholder.className = "preview-image-placeholder";
+                  placeholder.textContent =
+                    field.placeholder || "Add an image URL in the inspector to show a reference photo.";
+                  staticBlock.appendChild(placeholder);
+                }
+              break;
+            }
+            case "divider": {
+              const divider = document.createElement("hr");
+              divider.className = "field-divider";
+              staticBlock.appendChild(divider);
+              break;
+            }
+            default:
+              staticBlock.textContent = field.label || "";
+          }
+          return staticBlock;
+        }
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "field-card" + (field.required ? " required" : "");
+        wrapper.dataset.fieldId = field.id;
+
+        const titleEl = document.createElement("span");
+        titleEl.className = "field-title";
+        titleEl.textContent = field.label ?? field.id;
+        wrapper.appendChild(titleEl);
+
+        const showMeta = field.placeholder && !OPTION_FIELD_TYPES.has(field.type);
+        if (showMeta) {
+          const meta = document.createElement("span");
+          meta.className = "meta";
+          meta.textContent = field.placeholder;
+          wrapper.appendChild(meta);
+        }
+
+        let control;
+        switch (field.type) {
+          case "textarea":
+            control = document.createElement("textarea");
+            control.name = field.id;
+            control.rows = 3;
+            control.placeholder = field.placeholder || "";
+            break;
+          case "select":
+            control = document.createElement("select");
+            control.name = field.id;
+            if (!field.required) {
+              const placeholderOpt = document.createElement("option");
+              placeholderOpt.value = "";
+              placeholderOpt.textContent = field.placeholder ?? "Select…";
+              control.appendChild(placeholderOpt);
+            }
+            (field.options ?? []).forEach((option) => {
+              const opt = document.createElement("option");
+              opt.value = option.value;
+              opt.textContent = option.label ?? option.value;
+              control.appendChild(opt);
+            });
+            break;
+          case "checkbox-group": {
+            control = document.createElement("div");
+            control.className = "checkbox-grid";
+            (field.options ?? []).forEach((option) => {
+              const optionWrapper = document.createElement("label");
+              optionWrapper.className = "checkbox-option";
+              const input = document.createElement("input");
+              input.type = "checkbox";
+              input.name = field.id;
+              input.value = option.value;
+              optionWrapper.appendChild(input);
+              const optionText = document.createElement("span");
+              optionText.textContent = option.label ?? option.value;
+              optionWrapper.appendChild(optionText);
+              control.appendChild(optionWrapper);
+            });
+            break;
+          }
+          case "single-choice": {
+            control = document.createElement("div");
+            control.className = "choice-list";
+            (field.options ?? []).forEach((option, index) => {
+              const optionWrapper = document.createElement("label");
+              optionWrapper.className = "choice-option";
+              const input = document.createElement("input");
+              input.type = "radio";
+              input.name = field.id;
+              input.value = option.value;
+              input.required = Boolean(field.required);
+              if (index === 0 && !field.required) {
+                input.checked = false;
+              }
+              optionWrapper.appendChild(input);
+              const optionText = document.createElement("span");
+              optionText.textContent = option.label ?? option.value;
+              optionWrapper.appendChild(optionText);
+              control.appendChild(optionWrapper);
+            });
+            break;
+          }
+          case "date":
+          case "time":
+          case "number":
+          case "email":
+          case "tel":
+            control = document.createElement("input");
+            control.type = field.type === "tel" ? "tel" : field.type;
+            control.name = field.id;
+            control.placeholder = field.placeholder || "";
+            break;
+          case "address":
+            control = document.createElement("textarea");
+            control.name = field.id;
+            control.rows = 3;
+            control.placeholder = field.placeholder || "Street, City, State";
+            break;
+          case "file":
+            control = document.createElement("input");
+            control.type = "file";
+            control.name = field.id;
+              if (field.multiple) control.multiple = true;
+              if (Array.isArray(field.accepts) && field.accepts.length) {
+                control.accept = field.accepts.join(",");
+              }
+            break;
+            case "image-upload":
+              control = document.createElement("input");
+              control.type = "file";
+              control.name = field.id;
+              control.accept = "image/*";
+              if (field.multiple) control.multiple = true;
+              if (Array.isArray(field.accepts) && field.accepts.length) {
+                control.accept = field.accepts.join(",");
+              }
+              break;
+          default:
+            control = document.createElement("input");
+            control.type = "text";
+            control.name = field.id;
+            control.placeholder = field.placeholder || "";
+        }
+
+        if (control) {
+          if (field.required && control instanceof HTMLSelectElement) control.required = true;
+          if (field.required && control instanceof HTMLTextAreaElement) control.required = true;
+          if (
+            field.required &&
+            control instanceof HTMLInputElement &&
+            control.type !== "radio" &&
+            control.type !== "checkbox"
+          ) {
+            control.required = true;
+          }
+          wrapper.appendChild(control);
+        }
+        if (OPTION_FIELD_TYPES.has(field.type) && field.placeholder) {
+          const hint = document.createElement("span");
+          hint.className = "meta";
+          hint.textContent = field.placeholder;
+          wrapper.appendChild(hint);
+        }
+          if (FILE_FIELD_TYPES.has(field.type)) {
+            if (Array.isArray(field.accepts) && field.accepts.length) {
+              const acceptMeta = document.createElement("span");
+              acceptMeta.className = "meta";
+              acceptMeta.textContent = `Allowed: ${field.accepts.join(", ")}`;
+              wrapper.appendChild(acceptMeta);
+            }
+            if (field.multiple) {
+              const multipleMeta = document.createElement("span");
+              multipleMeta.className = "meta";
+              multipleMeta.textContent = field.type === "image-upload" ? "Allows multiple images" : "Allows multiple files";
+              wrapper.appendChild(multipleMeta);
+            }
+          }
+
+        state.fieldRefs.set(field.id, { field, element: wrapper });
+        return wrapper;
+      }
+
+      function buildDependencyMap(form) {
+        const map = {};
+        (form.fields ?? []).forEach((field) => {
+          (field.conditionalGroups ?? []).forEach((group) => {
+            const source = group.when?.field;
+            if (!source) return;
+            map[source] = map[source] ?? [];
+            if (!map[source].includes(field.id)) {
+              map[source].push(field.id);
+            }
+          });
+        });
+        return map;
+      }
+
+      async function handleSubmitVisit(event) {
+        event.preventDefault();
+        const form = getActiveForm();
+        if (!form) {
+          showFillAlert("Select a form first.", "error");
+          return;
+        }
+        const payload = {};
+        const errors = [];
+        form.fields.forEach((field) => {
+          const value = getFieldValue(field);
+          if (field.required) {
+            const isEmpty =
+              value === undefined ||
+              value === null ||
+              value === "" ||
+              (Array.isArray(value) && value.length === 0);
+            if (isEmpty) {
+              errors.push(field.label ?? field.id);
+            }
+          }
+          payload[field.id] = value;
+        });
+        if (errors.length) {
+          showFillAlert(`Complete required: ${errors.join(", ")}`, "error");
+          return;
+        }
+
+        const durationSetting = form.settings?.autoCalculateDuration;
+        if (durationSetting) {
+          const start = payload[durationSetting.startField];
+          const end = payload[durationSetting.endField];
+          payload.__durationMinutes = calculateDurationMinutes(start, end);
+        }
+
+        try {
+          await apiFetch(`/forms/${form.id}/submissions`, {
+            method: "POST",
+            body: JSON.stringify(payload)
+          });
+          showFillAlert("Visit recorded successfully.", "success");
+          renderFormFill(form);
+          await loadSubmissions();
+        } catch (error) {
+          console.error(error);
+          showFillAlert(error.message ?? "Unable to submit", "error");
+        }
+      }
+
+      function handleFieldChange(event) {
+        const fieldId = event.target.name;
+        if (!fieldId) return;
+        const ref = state.fieldRefs.get(fieldId);
+        if (!ref) return;
+        state.currentValues[fieldId] = getFieldValue(ref.field);
+        const dependents = state.dependencyMap[fieldId] ?? [];
+        const form = getActiveForm();
+        dependents.forEach((depId) => {
+          const depRef = state.fieldRefs.get(depId);
+          if (!depRef) return;
+          const select = depRef.element.querySelector("select");
+          if (select) {
+            populateSelectOptions(depRef.field, select, form);
+          }
+        });
+      }
+
+      function getFieldValue(field) {
+        const ref = state.fieldRefs.get(field.id);
+        if (!ref) return null;
+        const wrapper = ref.element;
+          switch (field.type) {
+          case "checkbox-group":
+            return Array.from(wrapper.querySelectorAll('input[type="checkbox"]:checked')).map((input) => input.value);
+          case "single-choice": {
+            const selected = wrapper.querySelector('input[type="radio"]:checked');
+            return selected ? selected.value : "";
+          }
+            case "file":
+            case "image-upload": {
+            const input = wrapper.querySelector('input[type="file"]');
+            if (!input || !input.files) return [];
+            return Array.from(input.files).map((file) => ({
+              name: file.name,
+              size: file.size,
+              type: file.type
+            }));
+          }
+        case "textarea":
+        case "address":
+          return wrapper.querySelector("textarea")?.value ?? "";
+        case "select":
+          return wrapper.querySelector("select")?.value ?? "";
+        default:
+          return wrapper.querySelector("input")?.value ?? "";
+        }
+      }
+
+      function setFieldValue(field, value) {
+        const ref = state.fieldRefs.get(field.id);
+        if (!ref) return;
+        state.currentValues[field.id] = value;
+        const wrapper = ref.element;
+          switch (field.type) {
+          case "checkbox-group": {
+            const values = Array.isArray(value) ? value : [value];
+            wrapper.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+              input.checked = values.includes(input.value);
+            });
+            break;
+          }
+          case "single-choice": {
+            wrapper.querySelectorAll('input[type="radio"]').forEach((input) => {
+              input.checked = input.value === value;
+            });
+            break;
+          }
+          case "file":
+          case "image-upload":
+            if (wrapper.querySelector('input[type="file"]')) {
+              wrapper.querySelector('input[type="file"]').value = "";
+            }
+            break;
+          case "textarea":
+        case "address":
+          wrapper.querySelector("textarea").value = value ?? "";
+          break;
+        case "select":
+          wrapper.querySelector("select").value = value ?? "";
+          break;
+        default:
+          wrapper.querySelector("input").value = value ?? "";
+        }
+      }
+
+      function populateSelectOptions(field, selectElement, form) {
+        const currentValue = state.currentValues[field.id] ?? "";
+        selectElement.innerHTML = "";
+        if (!field.required) {
+          const placeholderOpt = document.createElement("option");
+          placeholderOpt.value = "";
+          placeholderOpt.textContent = field.placeholder ?? "Select…";
+          selectElement.appendChild(placeholderOpt);
+        }
+        const options = getEffectiveOptions(field, state.currentValues, form);
+        options.forEach((option) => {
+          const opt = document.createElement("option");
+          opt.value = option.value;
+          opt.textContent = option.label ?? option.value;
+          selectElement.appendChild(opt);
+        });
+        if (currentValue) {
+          selectElement.value = currentValue;
+        } else if (field.defaultValue) {
+          selectElement.value = field.defaultValue;
+        } else if (field.required) {
+          selectElement.selectedIndex = 0;
+        }
+      }
+
+      function getEffectiveOptions(field, values, form) {
+        if (!Array.isArray(field.conditionalGroups) || !field.conditionalGroups.length) {
+          return field.options ?? [];
+        }
+        for (const group of field.conditionalGroups) {
+          if (values[group.when.field] === group.when.equals) {
+            return group.options ?? field.options ?? [];
+          }
+        }
+        return field.options ?? [];
+      }
+
+      function calculateDurationMinutes(start, end) {
+        if (!start || !end) return null;
+        const [sh, sm] = start.split(":").map(Number);
+        const [eh, em] = end.split(":").map(Number);
+        const minutes = eh * 60 + em - (sh * 60 + sm);
+        if (Number.isNaN(minutes) || minutes <= 0) {
+          return null;
+        }
+        return minutes;
+      }
+
+      function renderSubmissions() {
+        const form = getActiveForm();
+        if (!form) {
+          submissionTable.innerHTML = `<div class="empty-state">No form selected.</div>`;
+          return;
+        }
+        if (!state.submissions.length) {
+          submissionTable.innerHTML = `<div class="empty-state">No submissions yet. Log a visit to see history.</div>`;
+          return;
+        }
+
+        const headers = ["Submitted", ...form.fields.map((field) => field.label ?? field.id)];
+        const rowsHtml = state.submissions
+          .map((entry) => {
+            const submittedAt = new Date(entry.submittedAt).toLocaleString();
+            const values = form.fields.map((field) => formatSubmissionValue(field, entry.data[field.id], entry, form));
+            return `
+              <tr>
+                <td>${submittedAt}</td>
+                ${values.map((value) => `<td>${value}</td>`).join("")}
+              </tr>
+            `;
+          })
+          .join("");
+
+        submissionTable.innerHTML = `
+          <div class="card">
+            <strong>Total submissions: ${state.submissions.length.toString()}</strong>
+            <table>
+              <thead>
+                <tr>${headers.map((head) => `<th>${head}</th>`).join("")}</tr>
+              </thead>
+              <tbody>${rowsHtml}</tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      function formatSubmissionValue(field, value, entry, form) {
+        if (field.type === "checkbox-group") {
+          const mapped = (Array.isArray(value) ? value : []).map((val) => findOptionLabel(field, val));
+          return mapped.length ? mapped.join(", ") : "—";
+        }
+        if (field.type === "select") {
+          return findOptionLabel(field, value) ?? "—";
+        }
+          if (field.type === "file" || field.type === "image-upload") {
+          const files = Array.isArray(value) ? value : [];
+          return files.length ? `${files.length} file(s)` : "—";
+        }
+        if (value === undefined || value === null || value === "") {
+          return "—";
+        }
+        const durationSetting = form?.settings?.autoCalculateDuration;
+        if (durationSetting) {
+          const duration = entry.data.__durationMinutes;
+          if (field.id === durationSetting.endField && duration) {
+            return `${value} <span class="tag">+${formatMinutes(duration)}</span>`;
+          }
+        }
+        return typeof value === "string" ? escapeHtml(value) : JSON.stringify(value);
+      }
+
+      function formatMinutes(minutes) {
+        if (!minutes) return "";
+        const hrs = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        if (hrs && mins) return `${hrs}h ${mins}m`;
+        if (hrs) return `${hrs}h`;
+        return `${mins}m`;
+      }
+
+      function findOptionLabel(field, value) {
+        if (!value) return null;
+        const options = field.options ?? [];
+        const option = options.find((opt) => opt.value === value);
+        if (option) return option.label ?? option.value;
+        return value;
+      }
+
+      function showFillAlert(message, type = "success") {
+        fillAlerts.innerHTML = `<div class="alert ${type}">${message}</div>`;
+        setTimeout(() => {
+          if (fillAlerts.firstChild) {
+            fillAlerts.removeChild(fillAlerts.firstChild);
+          }
+        }, 3500);
+      }
+
+      async function downloadCsv() {
+        const form = getActiveForm();
+        if (!form) {
+          showFillAlert("Select a form first.", "error");
+          return;
+        }
+        try {
+          const response = await apiFetch(
+            `/forms/${form.id}/export.csv`,
+            { headers: { Accept: "text/csv" } },
+            { raw: true }
+          );
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          const anchor = document.createElement("a");
+          anchor.href = url;
+          anchor.download = `${form.slug || form.id}-submissions.csv`;
+          anchor.click();
+          URL.revokeObjectURL(url);
+        } catch (error) {
+          showFillAlert(error.message ?? "Unable to download CSV.", "error");
+        }
+      }
+
+        function updateSharePanel(form) {
+          if (!form || !state.auth.token) {
+            shareCard.hidden = true;
+            publishStatusTag.textContent = "";
+            publishStatusTag.classList.remove("published", "draft");
+            if (visibilityTag) {
+              visibilityTag.textContent = "";
+              visibilityTag.classList.remove("soft");
+            }
+            if (notificationSummary) {
+              notificationSummary.textContent = "";
+            }
+            if (shareVisibilityButtons.length) {
+              shareVisibilityButtons.forEach((button) => {
+                button.classList.remove("active");
+                button.setAttribute("aria-pressed", "false");
+              });
+            }
+            return;
+          }
+          shareCard.hidden = false;
+          const visibility = form.visibility === "private" ? "private" : "public";
+          const link = form.shareUrl || "";
+          const isPublished = Boolean(form.isPublished);
+          const isPublic = visibility === "public";
+
+          shareLinkDisplay.textContent = isPublic && link ? link : isPublic ? "—" : "Private form";
+          shareLinkDisplay.title = isPublic ? link : "";
+          shareLinkDisplay.dataset.url = isPublic ? link : "";
+
+          publishStatusTag.textContent = isPublished ? "Published" : "Draft";
+          publishStatusTag.classList.toggle("published", isPublished);
+          publishStatusTag.classList.toggle("draft", !isPublished);
+
+          if (visibilityTag) {
+            visibilityTag.textContent = isPublic ? "Public" : "Private";
+            visibilityTag.classList.toggle("soft", isPublic);
+          }
+
+          togglePublishBtn.textContent = isPublished ? "Unpublish" : "Publish";
+          copyShareLinkBtn.disabled = !isPublic || !isPublished || !link;
+          openShareLinkBtn.disabled = !isPublic || !isPublished || !link;
+          regenerateShareBtn.disabled = !isPublic;
+
+          if (notificationSummary) {
+            if (!isPublic) {
+              notificationSummary.textContent = "Private form — share link disabled.";
+            } else {
+              const notifications = form.settings?.notifications;
+              if (notifications?.enabled && Array.isArray(notifications.recipients) && notifications.recipients.length) {
+                notificationSummary.textContent = `Email notifications to ${notifications.recipients.join(", ")}`;
+              } else {
+                notificationSummary.textContent = "Email notifications off";
+              }
+            }
+          }
+          if (shareVisibilityButtons.length) {
+            shareVisibilityButtons.forEach((button) => {
+              const isActive = button.dataset.shareVisibility === visibility;
+              button.classList.toggle("active", isActive);
+              button.setAttribute("aria-pressed", isActive ? "true" : "false");
+            });
+          }
+        }
+
+      async function handleCopyShareLink() {
+        const form = getActiveForm();
+        if (!form) return;
+        if (!form.isPublished) {
+          showFillAlert("Publish the form before sharing.", "error");
+          return;
+        }
+          if (form.visibility === "private") {
+            showFillAlert("Private forms cannot generate share links.", "error");
+            return;
+          }
+        const link = form.shareUrl;
+        if (!link) {
+          showFillAlert("Share link unavailable.", "error");
+          return;
+        }
+        try {
+          await navigator.clipboard.writeText(link);
+          showFillAlert("Share link copied to clipboard.", "success");
+        } catch (error) {
+          console.error(error);
+          showFillAlert("Unable to copy link.", "error");
+        }
+      }
+
+      function handleOpenShareLink() {
+        const form = getActiveForm();
+          if (!form || form.visibility === "private" || !form.isPublished || !form.shareUrl) return;
+        window.open(form.shareUrl, "_blank", "noopener");
+      }
+
+      async function handleRegenerateShare() {
+        const form = getActiveForm();
+        if (!form) return;
+          if (form.visibility === "private") {
+            showFillAlert("Private forms cannot generate share links.", "error");
+            return;
+          }
+        const confirmed = confirm("Generate a new link? The previous URL will stop working immediately.");
+        if (!confirmed) return;
+        try {
+          await apiFetch(`/forms/${form.id}/share`, { method: "POST" });
+          const updated = await fetchFormById(form.id);
+          updateFormInState(updated);
+          renderFormSelects();
+          updateSharePanel(updated);
+          showFillAlert("Share link refreshed.", "success");
+        } catch (error) {
+          console.error(error);
+          showFillAlert(error.message ?? "Unable to regenerate share link.", "error");
+        }
+      }
+
+        async function updateFormVisibility(nextVisibility) {
+          const form = getActiveForm();
+          if (!form) return;
+          const normalized = nextVisibility === "private" ? "private" : "public";
+          if (form.visibility === normalized) {
+            return;
+          }
+          shareVisibilityButtons.forEach((btn) => {
+            btn.disabled = true;
+          });
+          try {
+            const response = await apiFetch(`/forms/${form.id}`, {
+              method: "PUT",
+              body: JSON.stringify({ visibility: normalized })
+            });
+            const updated = response.data;
+            updateFormInState(updated);
+            renderFormSelects();
+            updateSharePanel(updated);
+            showFillAlert(
+              normalized === "private" ? "Form is now private to your workspace." : "Form is now public and shareable.",
+              "success"
+            );
+          } catch (error) {
+            console.error("Visibility update error:", error);
+            showFillAlert(error.message ?? "Unable to update visibility.", "error");
+          } finally {
+            shareVisibilityButtons.forEach((btn) => {
+              btn.disabled = false;
+            });
+          }
+        }
+
+      async function handleTogglePublish() {
+        const form = getActiveForm();
+        if (!form) return;
+        const targetState = !form.isPublished;
+        try {
+          const response = await apiFetch(`/forms/${form.id}/publish`, {
+            method: "POST",
+            body: JSON.stringify({ isPublished: targetState })
+          });
+          const updated = response.data;
+          updateFormInState(updated);
+          renderFormSelects();
+          updateSharePanel(updated);
+          showFillAlert(
+            targetState ? "Form published. Share link is live." : "Form unpublished.",
+            "success"
+          );
+        } catch (error) {
+          console.error(error);
+          showFillAlert(error.message ?? "Unable to update publish status.", "error");
+        }
+      }
+
+      async function fetchFormById(formId) {
+        const response = await apiFetch(`/forms/${formId}`);
+          return normalizeForm(response.data);
+      }
+
+        function updateFormInState(updatedForm) {
+          if (!updatedForm) return;
+          const normalized = normalizeForm(updatedForm);
+          const index = state.forms.findIndex((form) => form.id === normalized.id);
+        if (index >= 0) {
+            state.forms[index] = normalized;
+        } else {
+            state.forms.push(normalized);
+        }
+      }
+
+      function addBuilderField(blueprint) {
+        if (!blueprint || blueprint.status === "soon") {
+          showBuilderAlert("This element is coming soon.", "error");
+          return;
+        }
+        const newField = createFieldFromBlueprint(blueprint);
+        if (!newField) return;
+        state.builder.fields.push(newField);
+        selectBuilderField(newField.id);
+        renderBuilderFields();
+      }
+
+      function renderBuilderFields() {
+        builderCanvas.innerHTML = "";
+        if (!state.builder.fields.length) {
+          builderCanvas.classList.add("builder-canvas-empty");
+          builderCanvas.innerHTML = `
+            <div class="builder-canvas-empty">
+              Drop fields here or click a palette item to start your template.
+            </div>
+          `;
+          renderBuilderPreview();
+          renderInspector();
+          return;
+        }
+        builderCanvas.classList.remove("builder-canvas-empty");
+        state.builder.fields.forEach((field, index) => {
+          if (field.displayOnly === undefined && STATIC_FIELD_TYPES.has(field.type)) {
+            field.displayOnly = true;
+          }
+          const item = document.createElement("div");
+          item.className = "builder-field-item" + (field.id === state.builder.selectedFieldId ? " active" : "");
+          item.dataset.fieldId = field.id;
+          item.dataset.index = index;
+          const fieldTypeLabel = field.kind || field.type;
+          const statusTag = field.displayOnly
+            ? '<span class="tag">Display</span>'
+            : field.required
+            ? '<span class="tag">Required</span>'
+            : '<span class="tag">Optional</span>';
+          item.innerHTML = `
+            <div class="builder-field-head">
+              <h4>${escapeHtml(field.label || "Untitled Field")}</h4>
+              <div class="builder-field-actions">
+                <span class="field-item-handle icon-button" title="Drag">&#8942;</span>
+                <button type="button" class="icon-button" data-action="duplicate" title="Duplicate">⧉</button>
+                <button type="button" class="icon-button" data-action="delete" title="Delete">×</button>
+              </div>
+            </div>
+            <div class="builder-field-meta">
+              <span>${escapeHtml(fieldTypeLabel)}</span>
+              ${statusTag}
+            </div>
+          `;
+          item.querySelector("[data-action='delete']").addEventListener("click", (event) => {
+            event.stopPropagation();
+            removeBuilderField(field.id);
+          });
+          item.querySelector("[data-action='duplicate']").addEventListener("click", (event) => {
+            event.stopPropagation();
+            duplicateBuilderField(field.id);
+          });
+          builderCanvas.appendChild(item);
+        });
+        initializeSortable();
+        renderBuilderPreview();
+        renderInspector();
+      }
+
+      function initializeSortable() {
+        if (!window.Sortable || state.builder.sortable) return;
+        state.builder.sortable = Sortable.create(builderCanvas, {
+          animation: 160,
+          handle: ".field-item-handle",
+          ghostClass: "dragging",
+          onEnd: ({ oldIndex, newIndex }) => {
+            if (oldIndex === newIndex) return;
+            const [moved] = state.builder.fields.splice(oldIndex, 1);
+            state.builder.fields.splice(newIndex, 0, moved);
+            renderBuilderFields();
+          }
+        });
+      }
+
+      function selectBuilderField(fieldId) {
+        state.builder.selectedFieldId = fieldId;
+        renderBuilderFields();
+      }
+
+      function removeBuilderField(fieldId) {
+        const index = state.builder.fields.findIndex((field) => field.id === fieldId);
+        if (index === -1) return;
+        state.builder.fields.splice(index, 1);
+        if (state.builder.selectedFieldId === fieldId) {
+          state.builder.selectedFieldId =
+            state.builder.fields[index]?.id ?? state.builder.fields[index - 1]?.id ?? null;
+        }
+        renderBuilderFields();
+      }
+
+        function duplicateBuilderField(fieldId) {
+          const original = state.builder.fields.find((field) => field.id === fieldId);
+          if (!original) return;
+          const copy = JSON.parse(JSON.stringify(original));
+          copy.id = slugify(`${copy.id || "field"}-copy-${Date.now()}`);
+          copy.label = `${copy.label || "Field"} Copy`;
+          state.builder.fields.push(copy);
+          selectBuilderField(copy.id);
+        }
+
+        function renderBuilderPreview() {
+          const visibility = state.builder.settings?.visibility === "private" ? "private" : "public";
+          const branding = state.builder.settings?.branding ?? {};
+          const notifications = state.builder.settings?.notifications ?? {};
+          const logoUrl = branding.logoUrl?.trim();
+          const fieldsMarkup = state.builder.fields.map(renderPreviewControl).join("");
+          const hasFields = Boolean(state.builder.fields.length);
+          const visibilityLabel =
+            visibility === "private" ? "Private • workspace only" : "Public • shareable link";
+          const visibilityNote =
+            visibility === "private"
+              ? "Private form — only signed-in workspace members can fill it."
+              : "Public form — share link is available for external responses.";
+          const recipientList = (notifications.recipients || []).join(", ") || "configured recipients";
+          const notificationsMarkup = notifications.enabled
+            ? `<div class="preview-note">Email notifications to ${escapeHtml(recipientList)}</div>`
+            : `<div class="preview-note">Email notifications off</div>`;
+          const headerMarkup = logoUrl
+            ? `<div class="preview-branding"><img src="${escapeHtml(logoUrl)}" alt="Form logo preview" /></div>`
+            : "";
+          builderPreviewForm.innerHTML = `
+            ${headerMarkup}
+            <div class="preview-pill">${escapeHtml(visibilityLabel)}</div>
+            <div class="preview-note">${escapeHtml(visibilityNote)}</div>
+            ${hasFields ? fieldsMarkup : '<div class="empty-state">Add fields from the palette to preview your form.</div>'}
+            ${notificationsMarkup}
+          `;
+        }
+
+      function renderPreviewControl(field) {
+        const label = escapeHtml(field.label || field.id);
+        const statusTag = field.required ? '<span class="tag">Required</span>' : '<span class="tag">Optional</span>';
+        const placeholder = escapeHtml(field.placeholder || "");
+        const options = normalizeFieldOptions(field.options);
+        switch (field.type) {
+          case "heading":
+            return `
+              <div class="field-static">
+                <h3 class="preview-heading">${label}</h3>
+                ${placeholder ? `<p class="preview-paragraph">${placeholder}</p>` : ""}
+              </div>`;
+          case "paragraph":
+            return `
+              <div class="field-static">
+                <p class="preview-paragraph">${placeholder || label}</p>
+              </div>`;
+          case "divider":
+            return `<hr class="preview-divider" />`;
+          case "image":
+            if (field.imageUrl) {
+              return `
+                <div class="field-static">
+                  <img src="${escapeHtml(field.imageUrl)}" alt="${label}" class="preview-image" />
+                  ${placeholder ? `<p class="preview-paragraph">${placeholder}</p>` : ""}
+                </div>`;
+            }
+            return `
+              <div class="field-static">
+                <div class="preview-image-placeholder">
+                  ${placeholder || "Add an image URL in the inspector to show a reference photo."}
+                </div>
+              </div>`;
+          case "textarea":
+            return `
+              <label>
+                ${label} ${statusTag}
+                <small>${placeholder}</small>
+                <textarea disabled placeholder="${placeholder}"></textarea>
+              </label>`;
+          case "address":
+            return `
+              <label>
+                ${label} ${statusTag}
+                <small>${placeholder}</small>
+                <textarea disabled placeholder="${placeholder || "Street, City, State"}"></textarea>
+              </label>`;
+          case "select":
+            return `
+              <label>
+                ${label} ${statusTag}
+                <small>${placeholder}</small>
+                <select disabled>
+                  ${options.map((opt) => `<option>${escapeHtml(opt.label)}</option>`).join("")}
+                </select>
+              </label>`;
+          case "checkbox-group":
+            return `
+              <div>
+                <div style="display:flex;align-items:center;gap:0.55rem;">
+                  <span>${label}</span>
+                  ${statusTag}
+                </div>
+                <small>${placeholder}</small>
+                <div class="checkbox-grid">
+                  ${options
+                    .map(
+                      (opt) => `
+                        <label class="checkbox-option">
+                          <input type="checkbox" disabled />
+                          <span>${escapeHtml(opt.label)}</span>
+                        </label>`
+                    )
+                    .join("")}
+                </div>
+              </div>`;
+          case "single-choice":
+            return `
+              <div>
+                <div style="display:flex;align-items:center;gap:0.55rem;">
+                  <span>${label}</span>
+                  ${statusTag}
+                </div>
+                <small>${placeholder}</small>
+                <div class="choice-list">
+                  ${options
+                    .map(
+                      (opt) => `
+                        <label class="choice-option">
+                          <input type="radio" disabled />
+                          <span>${escapeHtml(opt.label)}</span>
+                        </label>`
+                    )
+                    .join("")}
+                </div>
+              </div>`;
+          case "file": {
+            const acceptsList = Array.isArray(field.accepts) && field.accepts.length
+              ? field.accepts.map((value) => escapeHtml(value)).join(", ")
+              : "";
+            const acceptsMeta = acceptsList ? `<span class="meta">Allowed: ${acceptsList}</span>` : "";
+            const multipleMeta = field.multiple ? '<span class="meta">Allows multiple files</span>' : "";
+            return `
+              <div>
+                <div style="display:flex;align-items:center;gap:0.55rem;">
+                  <span>${label}</span>
+                  ${statusTag}
+                </div>
+                ${placeholder ? `<small>${placeholder}</small>` : ""}
+                <input type="file" disabled ${field.multiple ? "multiple" : ""} ${acceptsList ? `accept="${acceptsList}"` : ""} />
+                ${acceptsMeta}
+                ${multipleMeta}
+              </div>`;
+          }
+          case "image-upload": {
+            const acceptsList = Array.isArray(field.accepts) && field.accepts.length
+              ? field.accepts.map((value) => escapeHtml(value)).join(", ")
+              : "";
+            const acceptsMeta = acceptsList ? `<span class="meta">Allowed: ${acceptsList}</span>` : "";
+            const multipleMeta = field.multiple ? '<span class="meta">Allows multiple images</span>' : "";
+            return `
+              <div>
+                <div style="display:flex;align-items:center;gap:0.55rem;">
+                  <span>${label}</span>
+                  ${statusTag}
+                </div>
+                ${placeholder ? `<small>${placeholder}</small>` : ""}
+                <input type="file" disabled ${field.multiple ? "multiple" : ""} ${acceptsList ? `accept="${acceptsList}"` : `accept="image/*"`} />
+                ${acceptsMeta}
+                ${multipleMeta}
+              </div>`;
+          }
+            case "date":
+            case "time":
+            case "number":
+            case "email":
+            case "tel":
+              return `
+                <label>
+                  ${label} ${statusTag}
+                  <small>${placeholder}</small>
+                  <input type="${field.type === "tel" ? "tel" : field.type}" disabled placeholder="${placeholder}" />
+                </label>`;
+          default:
+            return `
+              <label>
+                ${label} ${statusTag}
+                <small>${placeholder}</small>
+                <input type="text" disabled placeholder="${placeholder}" />
+              </label>`;
+        }
+      }
+
+      function handleInspectorInput() {
+        const field = state.builder.fields.find((item) => item.id === state.builder.selectedFieldId);
+        if (!field) return;
+        const formData = new FormData(fieldInspectorForm);
+        field.label = formData.get("label") || field.label;
+        field.id = slugify(formData.get("id") || field.id);
+        field.placeholder = formData.get("placeholder") || "";
+        field.type = formData.get("type") || field.type;
+        field.displayOnly = STATIC_FIELD_TYPES.has(field.type);
+        field.required = field.displayOnly ? false : formData.get("required") === "true";
+        const blueprint = FIELD_BLUEPRINT_INDEX[field.type];
+        field.kind = blueprint?.label ?? field.kind ?? field.type;
+        if (OPTION_FIELD_TYPES.has(field.type)) {
+          field.options = normalizeFieldOptionsFromText(formData.get("options"));
+        } else {
+          field.options = [];
+        }
+      const imageUrlInput = fieldInspectorForm.elements.imageUrl;
+      if (field.type === "image") {
+        const imageUrl = imageUrlInput?.value?.trim() ?? "";
+        field.imageUrl = imageUrl;
+      } else if (imageUrlInput) {
+        delete field.imageUrl;
+      }
+      if (FILE_FIELD_TYPES.has(field.type)) {
+        const acceptsInput = fieldInspectorForm.elements.accepts;
+        const acceptsRaw = acceptsInput?.value ?? "";
+        field.accepts = acceptsRaw
+          ? acceptsRaw.split(",").map((value) => value.trim()).filter(Boolean)
+          : [];
+        field.multiple = Boolean(fieldInspectorForm.elements.multiple?.checked);
+      } else {
+        delete field.accepts;
+        delete field.multiple;
+      }
+        renderBuilderFields();
+      }
+
+      function renderInspector() {
+        const field = state.builder.fields.find((item) => item.id === state.builder.selectedFieldId);
+        if (!field) {
+          fieldInspectorForm.hidden = true;
+          fieldInspectorEmpty.hidden = false;
+          return;
+        }
+        fieldInspectorEmpty.hidden = true;
+        fieldInspectorForm.hidden = false;
+        fieldInspectorForm.elements.label.value = field.label || "";
+        fieldInspectorForm.elements.id.value = field.id || "";
+        fieldInspectorForm.elements.placeholder.value = field.placeholder || "";
+        fieldInspectorForm.elements.type.value = field.type || "text";
+        const requiredControl = fieldInspectorForm.elements.required;
+        if (field.displayOnly || STATIC_FIELD_TYPES.has(field.type)) {
+          requiredControl.value = "false";
+          requiredControl.disabled = true;
+        } else {
+          requiredControl.disabled = false;
+          requiredControl.value = field.required ? "true" : "false";
+        }
+        const optionsGroup = fieldInspectorForm.querySelector("[data-options-group]");
+        if (OPTION_FIELD_TYPES.has(field.type)) {
+          optionsGroup.hidden = false;
+          fieldInspectorForm.elements.options.value = (field.options || [])
+            .map((opt) => opt.label ?? opt.value)
+            .join("\n");
+        } else {
+          optionsGroup.hidden = true;
+          fieldInspectorForm.elements.options.value = "";
+        }
+        const imageUrlGroup = fieldInspectorForm.querySelector("[data-image-url-group]");
+        const uploadAcceptGroup = fieldInspectorForm.querySelector("[data-upload-accept-group]");
+        const uploadMultipleGroup = fieldInspectorForm.querySelector("[data-upload-multiple-group]");
+        if (imageUrlGroup) {
+          fieldInspectorForm.elements.imageUrl.value = field.imageUrl ?? "";
+          imageUrlGroup.hidden = field.type !== "image";
+        }
+        if (uploadAcceptGroup) {
+          const acceptsValue = Array.isArray(field.accepts) ? field.accepts.join(", ") : "";
+          fieldInspectorForm.elements.accepts.value = acceptsValue;
+          uploadAcceptGroup.hidden = !FILE_FIELD_TYPES.has(field.type);
+        }
+        if (uploadMultipleGroup) {
+          fieldInspectorForm.elements.multiple.checked = Boolean(field.multiple);
+          uploadMultipleGroup.hidden = !FILE_FIELD_TYPES.has(field.type);
+        }
+      }
+
+      function resetBuilder() {
+        state.builder.fields = [];
+        state.builder.selectedFieldId = null;
+          state.builder.settings = defaultBuilderSettings();
+        builderForm.reset();
+          syncVisibilityControls();
+          if (builderLogoInput) {
+            builderLogoInput.value = state.builder.settings.branding.logoUrl;
+          }
+          if (builderNotifyToggle) {
+            builderNotifyToggle.checked = state.builder.settings.notifications.enabled;
+          }
+          if (builderNotifyRecipientsInput) {
+            builderNotifyRecipientsInput.value = state.builder.settings.notifications.recipients.join(", ");
+          }
+          if (builderNotifySubjectInput) {
+            builderNotifySubjectInput.value = state.builder.settings.notifications.subject;
+          }
+          if (builderNotifyMessageInput) {
+            builderNotifyMessageInput.value = state.builder.settings.notifications.message;
+          }
+          updateNotificationFieldsState();
+        renderBuilderFields();
+        builderAlerts.innerHTML = "";
+      }
+
+      async function handleBuilderSubmit(event) {
+        event.preventDefault();
+        const name = builderNameInput.value.trim();
+        if (!name) {
+          showBuilderAlert("Provide a form name.", "error");
+          return;
+        }
+        if (!state.builder.fields.length) {
+          showBuilderAlert("Add at least one field before publishing.", "error");
+          return;
+        }
+          const brandingLogo = state.builder.settings.branding?.logoUrl?.trim() || "";
+          const notificationState = state.builder.settings.notifications ?? {};
+          const recipients =
+            notificationState.recipients && Array.isArray(notificationState.recipients)
+              ? notificationState.recipients.map((email) => email.trim()).filter(Boolean)
+              : parseRecipientList(builderNotifyRecipientsInput?.value ?? "");
+          const notifications = {
+            ...notificationState,
+            enabled: notificationState.enabled && recipients.length > 0,
+            recipients,
+            subject:
+              (notificationState.subject && notificationState.subject.trim()) || `New submission from ${name}`,
+            message: (notificationState.message ?? "").trim()
+          };
+          const settings = {
+            ...state.builder.settings,
+            branding: { logoUrl: brandingLogo },
+            notifications
+          };
+        const cleanedFields = state.builder.fields.map((field) => {
+          const cleaned = {
+            id: slugify(field.id || field.label),
+            label: field.label,
+            type: field.type,
+            required: Boolean(field.required),
+            placeholder: field.placeholder ?? "",
+            options: normalizeFieldOptions(field.options),
+            displayOnly: Boolean(field.displayOnly),
+            kind: field.kind
+          };
+          if (field.type === "image" && field.imageUrl) {
+            cleaned.imageUrl = field.imageUrl;
+          }
+          if (FILE_FIELD_TYPES.has(field.type)) {
+            cleaned.accepts = Array.isArray(field.accepts) ? field.accepts : [];
+            cleaned.multiple = Boolean(field.multiple);
+          }
+          return cleaned;
+        });
+        try {
+          const response = await apiFetch("/forms", {
+            method: "POST",
+            body: JSON.stringify({
+              name,
+              description: builderDescriptionInput.value,
+              fields: cleanedFields,
+                settings,
+                visibility: state.builder.settings.visibility
+            })
+          });
+            const newForm = normalizeForm(response.data);
+          showBuilderAlert("Form published successfully.", "success");
+          resetBuilder();
+          state.activeFormId = newForm.id;
+          await loadForms();
+        } catch (error) {
+          console.error(error);
+          showBuilderAlert(error.message ?? "Failed to publish form.", "error");
+        }
+      }
+
+      function showBuilderAlert(message, type = "success") {
+        builderAlerts.innerHTML = `<div class="alert ${type}">${message}</div>`;
+        setTimeout(() => {
+          builderAlerts.innerHTML = "";
+        }, 4000);
+      }
+
+      function showAuthOverlay(view = "login") {
+        authOverlay.hidden = false;
+        authOverlay.style.display = "flex";
+        showAuthView(view);
+        displayAuthError();
+      }
+
+      function hideAuthOverlay() {
+        authOverlay.hidden = true;
+        authOverlay.style.display = "none";
+        displayAuthError();
+      }
+
+      function showAuthView(view) {
+        authTabButtons.forEach((button) => {
+          button.classList.toggle("active", button.dataset.authView === view);
+        });
+        if (view === "signup") {
+          signupForm.hidden = false;
+          loginForm.hidden = true;
+        } else {
+          signupForm.hidden = true;
+          loginForm.hidden = false;
+        }
+      }
+
+      function displayAuthError(message) {
+        if (!message) {
+          authError.hidden = true;
+          authError.textContent = "";
+        } else {
+          authError.hidden = false;
+          authError.textContent = message;
+        }
+      }
+
+      async function handleLogin(event) {
+        event.preventDefault();
+        displayAuthError();
+        const formData = new FormData(loginForm);
+        const payload = {
+          email: formData.get("email")?.trim(),
+          password: formData.get("password")
+        };
+        if (!payload.email || !payload.password) {
+          displayAuthError("Email and password are required.");
+          return;
+        }
+        try {
+          const response = await apiFetch(
+            "/auth/login",
+            {
+              method: "POST",
+              body: JSON.stringify(payload)
+            },
+            { skipAuth: true }
+          );
+          applyAuthResponse(response.data);
+          hideAuthOverlay();
+          await loadForms();
+        } catch (error) {
+          console.error("Login error:", error);
+          displayAuthError(error.message ?? "Unable to sign in.");
+        }
+      }
+
+      async function handleSignup(event) {
+        event.preventDefault();
+        displayAuthError();
+        const formData = new FormData(signupForm);
+        const payload = {
+          name: formData.get("name")?.trim(),
+          workspaceName: formData.get("workspaceName")?.trim(),
+          email: formData.get("email")?.trim(),
+          password: formData.get("password"),
+          packageId: formData.get("packageId") || state.packages[0]?.id
+        };
+        if (!payload.email || !payload.password) {
+          displayAuthError("Email and password are required.");
+          return;
+        }
+        try {
+          const response = await apiFetch(
+            "/auth/signup",
+            {
+              method: "POST",
+              body: JSON.stringify(payload)
+            },
+            { skipAuth: true }
+          );
+          applyAuthResponse(response.data);
+          hideAuthOverlay();
+          await loadForms();
+        } catch (error) {
+          console.error("Signup error:", error);
+          displayAuthError(error.message ?? "Unable to create workspace.");
+        }
+      }
+
+      function applyAuthResponse(data) {
+        if (!data) return;
+        state.auth.token = data.token;
+        state.auth.user = data.user;
+        state.auth.workspace = data.workspace;
+        state.auth.package = data.package;
+        if (data.token) {
+          localStorage.setItem(STORAGE_TOKEN_KEY, data.token);
+        }
+        renderUserBar();
+        renderPackagePanels();
+      }
+
+      async function handleLogout() {
+        try {
+          await apiFetch("/auth/logout", { method: "POST" });
+        } catch (error) {
+          console.warn("Logout request failed:", error);
+        }
+        clearAuth();
+        showAuthOverlay("login");
+      }
+
+      async function apiFetch(path, options = {}, config = {}) {
+        const { skipAuth = false, raw = false } = config;
+        const finalOptions = {
+          method: options.method || "GET",
+          ...options
+        };
+        const headers = new Headers(finalOptions.headers || {});
+        if (!skipAuth) {
+          if (!state.auth.token) {
+            throw new Error("Authentication required");
+          }
+          headers.set("Authorization", `Bearer ${state.auth.token}`);
+        }
+        if (finalOptions.body && !(finalOptions.body instanceof FormData) && !headers.has("Content-Type")) {
+          headers.set("Content-Type", "application/json");
+        }
+        finalOptions.headers = headers;
+        const response = await fetch(`${API_BASE}${path}`, finalOptions);
+        if (raw) {
+          if (!response.ok) {
+            const text = await response.text().catch(() => "");
+            throw new Error(text || `Request failed (${response.status})`);
+          }
+          return response;
+        }
+        let body = {};
+        try {
+          body = await response.json();
+        } catch (_) {
+          body = {};
+        }
+        if (!response.ok) {
+          const message = body?.error ?? `Request failed (${response.status})`;
+          throw new Error(message);
+        }
+        return body;
+      }
+
+      function escapeHtml(value) {
+        return (value ?? "").replace(/[&<>"']/g, (char) => {
+          const map = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
+          return map[char] || char;
+        });
+      }
+
+      function slugify(value) {
+        return (value || "")
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/(^-|-$)+/g, "") || `field-${Math.random().toString(36).slice(2, 8)}`;
+      }
+
+      function normalizeFieldOptions(options) {
+        if (!Array.isArray(options)) return [];
+        return options.map((opt, index) => {
+          if (typeof opt === "string") {
+            const label = opt;
+            return { label, value: slugify(`${label}-${index}`) };
+          }
+          const label = opt.label ?? opt.value ?? `Option ${index + 1}`;
+          const value = opt.value ?? slugify(`${label}-${index}`);
+          return { label, value };
+        });
+      }
+
+      function normalizeFieldOptionsFromText(raw) {
+        return normalizeFieldOptions(
+          (raw || "")
+            .split("\n")
+            .map((line) => line.trim())
+            .filter(Boolean)
+        );
+      }
+
+        function normalizeField(field) {
+          if (!field) return null;
+          const normalized = {
+            ...field,
+            kind: field.kind || FIELD_BLUEPRINT_INDEX[field.type]?.label || field.type,
+            displayOnly: STATIC_FIELD_TYPES.has(field.type) || Boolean(field.displayOnly)
+          };
+          if (OPTION_FIELD_TYPES.has(field.type)) {
+            normalized.options = normalizeFieldOptions(field.options ?? []);
+          }
+        if (normalized.type === "image") {
+          normalized.imageUrl = typeof field.imageUrl === "string" ? field.imageUrl : "";
+        }
+        if (FILE_FIELD_TYPES.has(normalized.type)) {
+          let accepts = field.accepts;
+          if (typeof accepts === "string") {
+            accepts = accepts.split(",").map((value) => value.trim()).filter(Boolean);
+          }
+          if (!Array.isArray(accepts)) {
+            accepts = [];
+          }
+          if (!accepts.length && normalized.type === "image-upload") {
+            accepts = ["image/png", "image/jpeg", "image/webp"];
+          }
+          normalized.accepts = accepts;
+          normalized.multiple = Boolean(field.multiple);
+        } else {
+          delete normalized.accepts;
+          delete normalized.multiple;
+        }
+          return normalized;
+        }
+
+        function normalizeSettings(settings = {}) {
+          const defaults = defaultBuilderSettings();
+          const branding = {
+            ...defaults.branding,
+            ...(settings.branding ?? {})
+          };
+          branding.logoUrl = branding.logoUrl?.trim() || "";
+          const notifications = {
+            ...defaults.notifications,
+            ...(settings.notifications ?? {})
+          };
+          notifications.recipients = Array.isArray(notifications.recipients)
+            ? notifications.recipients.map((email) => email.trim()).filter(Boolean)
+            : [];
+          notifications.subject =
+            notifications.subject?.trim() || defaults.notifications.subject;
+          notifications.message = notifications.message?.trim() || "";
+          if (!notifications.recipients.length) {
+            notifications.enabled = false;
+          }
+          return {
+            ...defaults,
+            ...settings,
+            autoCalculateDuration: {
+              ...defaults.autoCalculateDuration,
+              ...(settings.autoCalculateDuration ?? {})
+            },
+            branding,
+            notifications
+          };
+        }
+
+        function normalizeForm(form) {
+          if (!form) return null;
+          const normalizedFields = Array.isArray(form.fields)
+            ? form.fields.map((field) => normalizeField(field)).filter(Boolean)
+            : [];
+          return {
+            ...form,
+            visibility: form.visibility === "private" ? "private" : "public",
+            fields: normalizedFields,
+            settings: normalizeSettings(form.settings ?? {})
+          };
+        }
+
+      renderBuilderFields();
+    </script>
+  </body>
+</html>

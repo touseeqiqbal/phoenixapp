@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Landscaping Form</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #020617;
+        --panel: rgba(15, 23, 42, 0.8);
+        --border: rgba(148, 163, 184, 0.2);
+        --accent: #38bdf8;
+        --muted: #94a3b8;
+        --text: #e2e8f0;
+        --success: #34d399;
+        --error: #f87171;
+        font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(ellipse at top, rgba(56, 189, 248, 0.18), transparent),
+          radial-gradient(circle at bottom right, rgba(37, 99, 235, 0.1), transparent),
+          var(--bg);
+        color: var(--text);
+        padding: clamp(1.25rem, 2vw + 1rem, 3rem);
+        display: flex;
+        justify-content: center;
+      }
+      main {
+        width: min(860px, 100%);
+        background: var(--panel);
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        backdrop-filter: blur(26px);
+        padding: clamp(1.5rem, 2vw + 1rem, 3rem);
+        display: grid;
+        gap: 1.5rem;
+        box-shadow: 0 40px 90px -45px rgba(15, 23, 42, 0.9);
+      }
+      header h1 {
+        margin: 0;
+        font-size: clamp(1.8rem, 2.6vw, 2.8rem);
+        font-weight: 600;
+      }
+        .form-logo {
+          max-height: 68px;
+          border-radius: 16px;
+          border: 1px solid rgba(148, 163, 184, 0.25);
+          background: rgba(8, 13, 24, 0.6);
+          padding: 0.35rem 0.9rem;
+          margin-bottom: 0.75rem;
+        }
+      header p {
+        margin: 0.5rem 0 0;
+        color: var(--muted);
+        font-size: 0.98rem;
+      }
+      .workspace-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        border-radius: 999px;
+        padding: 0.3rem 0.8rem;
+        font-size: 0.8rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        background: rgba(56, 189, 248, 0.16);
+        color: var(--accent);
+      }
+      form {
+        display: grid;
+        gap: 1.2rem;
+      }
+      label {
+        display: grid;
+        gap: 0.45rem;
+        font-size: 0.95rem;
+      }
+      label span.meta {
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 0.75rem 0.9rem;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(15, 23, 42, 0.78);
+        color: inherit;
+        font-size: 0.95rem;
+        transition: border 0.2s ease, transform 0.2s ease;
+      }
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: rgba(56, 189, 248, 0.5);
+        transform: translateY(-1px);
+        outline: none;
+      }
+      textarea {
+        resize: vertical;
+        min-height: 120px;
+      }
+        .static-block {
+          border: 1px solid rgba(148, 163, 184, 0.18);
+          border-radius: 14px;
+          padding: 1rem 1.1rem;
+          background: rgba(15, 23, 42, 0.6);
+          display: grid;
+          gap: 0.6rem;
+        }
+        .static-block h3 {
+          margin: 0;
+          font-size: 1.1rem;
+        }
+        .static-block p {
+          margin: 0;
+          color: rgba(148, 163, 184, 0.8);
+          line-height: 1.5;
+        }
+        .static-divider {
+          border: none;
+          border-top: 1px dashed rgba(148, 163, 184, 0.25);
+          margin: 0.75rem 0;
+        }
+        .checkbox-grid {
+        display: grid;
+        gap: 0.45rem;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      }
+      .checkbox-option {
+        display: flex;
+        gap: 0.6rem;
+        align-items: center;
+        padding: 0.65rem 0.75rem;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.15);
+        background: rgba(15, 23, 42, 0.6);
+        font-size: 0.9rem;
+      }
+      .checkbox-option input {
+        width: auto;
+        accent-color: var(--accent);
+      }
+        .choice-list {
+          display: grid;
+          gap: 0.5rem;
+        }
+        .choice-option {
+          display: flex;
+          align-items: center;
+          gap: 0.55rem;
+          border-radius: 12px;
+          padding: 0.6rem 0.75rem;
+          border: 1px solid rgba(148, 163, 184, 0.2);
+          background: rgba(15, 23, 42, 0.6);
+        }
+        .choice-option input {
+          accent-color: var(--accent);
+        }
+      button {
+        border: none;
+        border-radius: 14px;
+        padding: 0.85rem 1.3rem;
+        font-size: 1rem;
+        font-weight: 600;
+        background: linear-gradient(130deg, #38bdf8 0%, #22d3ee 100%);
+        color: #0f172a;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+        .static-block img {
+          max-width: 100%;
+          border-radius: 14px;
+          border: 1px solid rgba(148, 163, 184, 0.22);
+          background: rgba(8, 13, 24, 0.55);
+        }
+        button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 18px 32px -18px rgba(56, 189, 248, 0.55);
+      }
+      .inline-group {
+        display: grid;
+        gap: 0.9rem;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      }
+      .alert {
+        padding: 0.8rem 1rem;
+        border-radius: 12px;
+        font-size: 0.92rem;
+      }
+      .alert.success {
+        background: rgba(52, 211, 153, 0.12);
+        color: #bbf7d0;
+      }
+      .alert.error {
+        background: rgba(248, 113, 113, 0.12);
+        color: #fecaca;
+      }
+      .loading {
+        text-align: center;
+        color: var(--muted);
+        padding: 3rem 1rem;
+      }
+      .footer-note {
+        text-align: center;
+        color: rgba(148, 163, 184, 0.7);
+        font-size: 0.85rem;
+      }
+      @media (max-width: 540px) {
+        main {
+          padding: 1.5rem;
+        }
+        header h1 {
+          font-size: 1.65rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+          <img id="formLogo" class="form-logo" alt="Form logo" hidden />
+        <div class="workspace-badge" id="workspaceBadge" hidden></div>
+        <h1 id="formTitle">Loading form…</h1>
+        <p id="formDescription"></p>
+      </header>
+
+      <div id="status" class="loading">Fetching form…</div>
+      <form id="publicForm" hidden></form>
+      <div class="footer-note">Powered by Landscaping Work Log Workspace</div>
+    </main>
+
+    <template id="checkboxTemplate">
+      <label class="checkbox-option">
+        <input type="checkbox" />
+        <span></span>
+      </label>
+    </template>
+
+    <script>
+      const API_BASE = `${window.location.origin}/api/public`;
+        const statusEl = document.getElementById("status");
+        const formEl = document.getElementById("publicForm");
+        const titleEl = document.getElementById("formTitle");
+        const descriptionEl = document.getElementById("formDescription");
+        const formLogo = document.getElementById("formLogo");
+        const workspaceBadge = document.getElementById("workspaceBadge");
+        const checkboxTemplate = document.getElementById("checkboxTemplate");
+        const STATIC_FIELD_TYPES = new Set(["heading", "paragraph", "divider", "image"]);
+        const FILE_FIELD_TYPES = new Set(["file", "image-upload"]);
+
+      const shareKey = window.location.pathname.split("/").pop();
+      if (!shareKey) {
+        statusEl.textContent = "Invalid form link.";
+      } else {
+        loadForm();
+      }
+
+      async function loadForm() {
+        try {
+          const res = await fetch(`${API_BASE}/forms/${shareKey}`);
+          if (!res.ok) {
+            throw new Error("Form not found");
+          }
+          const body = await res.json();
+          const { form, workspace } = body.data ?? {};
+          if (!form || !form.isPublished) {
+            throw new Error("This form is no longer available.");
+          }
+          statusEl.hidden = true;
+          formEl.hidden = false;
+          renderHeader(form, workspace);
+          renderFields(form);
+        } catch (error) {
+          console.error(error);
+          statusEl.className = "alert error";
+          statusEl.textContent = error.message || "Unable to load form.";
+        }
+      }
+
+      function renderHeader(form, workspace) {
+        titleEl.textContent = form.name;
+        descriptionEl.textContent = form.description || "";
+          if (formLogo) {
+            const logoUrl = form.settings?.branding?.logoUrl;
+            if (logoUrl) {
+              formLogo.src = logoUrl;
+              formLogo.hidden = false;
+            } else {
+              formLogo.hidden = true;
+              formLogo.removeAttribute("src");
+            }
+          }
+        if (workspace?.name) {
+          workspaceBadge.hidden = false;
+          workspaceBadge.textContent = workspace.name;
+          if (workspace.color) {
+            workspaceBadge.style.backgroundColor = hexToRgba(workspace.color, 0.18);
+            workspaceBadge.style.color = workspace.color;
+          }
+        }
+      }
+
+          function renderStaticField(field) {
+          if (field.type === "divider") {
+            const divider = document.createElement("hr");
+            divider.className = "static-divider";
+            return divider;
+          }
+          const block = document.createElement("div");
+          block.className = "static-block";
+            const heading = document.createElement("h3");
+            heading.textContent = field.label || "Section";
+          switch (field.type) {
+            case "heading":
+              heading.textContent = field.label || "Section";
+              block.appendChild(heading);
+              if (field.placeholder) {
+                const paragraph = document.createElement("p");
+                paragraph.textContent = field.placeholder;
+                block.appendChild(paragraph);
+              }
+              break;
+            case "paragraph": {
+              block.appendChild(heading);
+              const paragraph = document.createElement("p");
+              paragraph.textContent = field.placeholder || field.label || "";
+              block.appendChild(paragraph);
+              break;
+            }
+            case "image": {
+                if (field.label) {
+                  block.appendChild(heading);
+                }
+                if (field.imageUrl) {
+                  const image = document.createElement("img");
+                  image.src = field.imageUrl;
+                  image.alt = field.label || "Form image";
+                  block.appendChild(image);
+                    if (field.placeholder) {
+                      const caption = document.createElement("p");
+                      caption.textContent = field.placeholder;
+                      block.appendChild(caption);
+                    }
+                  } else {
+                    const placeholder = document.createElement("p");
+                    placeholder.textContent =
+                      field.placeholder || "Add an image in the builder to show it here.";
+                    block.appendChild(placeholder);
+                  }
+              break;
+            }
+            default:
+              block.textContent = field.label || "";
+          }
+          return block;
+        }
+
+        function renderFields(form) {
+          formEl.innerHTML = "";
+          const fields = Array.isArray(form.fields) ? form.fields : [];
+          fields.forEach((field) => {
+            if (STATIC_FIELD_TYPES.has(field.type) || field.displayOnly) {
+              formEl.appendChild(renderStaticField(field));
+              return;
+            }
+            if (field.type === "checkbox-group") {
+              const section = document.createElement("div");
+              section.dataset.fieldId = field.id;
+              const title = document.createElement("span");
+              title.textContent = `${field.label ?? field.id}${field.required ? " *" : ""}`;
+              section.appendChild(title);
+              if (field.placeholder) {
+                const hint = document.createElement("span");
+                hint.className = "meta";
+                hint.textContent = field.placeholder;
+                section.appendChild(hint);
+              }
+              const grid = document.createElement("div");
+              grid.className = "checkbox-grid";
+              (field.options ?? []).forEach((option) => {
+                const optionFragment = checkboxTemplate.content.cloneNode(true);
+                const checkbox = optionFragment.querySelector("input");
+                const labelSpan = optionFragment.querySelector("span");
+                checkbox.name = field.id;
+                checkbox.value = option.value;
+                labelSpan.textContent = option.label ?? option.value;
+                grid.appendChild(optionFragment);
+              });
+              section.appendChild(grid);
+              formEl.appendChild(section);
+              return;
+            }
+            if (field.type === "single-choice") {
+              const section = document.createElement("div");
+              section.dataset.fieldId = field.id;
+              const title = document.createElement("span");
+              title.textContent = `${field.label ?? field.id}${field.required ? " *" : ""}`;
+              section.appendChild(title);
+              if (field.placeholder) {
+                const hint = document.createElement("span");
+                hint.className = "meta";
+                hint.textContent = field.placeholder;
+                section.appendChild(hint);
+              }
+              const list = document.createElement("div");
+              list.className = "choice-list";
+              (field.options ?? []).forEach((option) => {
+                const optionWrapper = document.createElement("label");
+                optionWrapper.className = "choice-option";
+                const radio = document.createElement("input");
+                radio.type = "radio";
+                radio.name = field.id;
+                radio.value = option.value;
+                if (field.required) {
+                  radio.required = true;
+                }
+                optionWrapper.appendChild(radio);
+                const span = document.createElement("span");
+                span.textContent = option.label ?? option.value;
+                optionWrapper.appendChild(span);
+                list.appendChild(optionWrapper);
+              });
+              section.appendChild(list);
+              formEl.appendChild(section);
+              return;
+            }
+            const wrapper = document.createElement("label");
+            wrapper.dataset.fieldId = field.id;
+            const title = document.createElement("span");
+            title.textContent = `${field.label ?? field.id}${field.required ? " *" : ""}`;
+            wrapper.appendChild(title);
+            if (field.placeholder) {
+              const hint = document.createElement("span");
+              hint.className = "meta";
+              hint.textContent = field.placeholder;
+              wrapper.appendChild(hint);
+            }
+
+            let control;
+            switch (field.type) {
+              case "textarea":
+              case "address":
+                control = document.createElement("textarea");
+                control.name = field.id;
+                control.placeholder = field.placeholder ?? "";
+                break;
+              case "select": {
+                control = document.createElement("select");
+                control.name = field.id;
+                if (!field.required) {
+                  const empty = document.createElement("option");
+                  empty.value = "";
+                  empty.textContent = field.placeholder ?? "Select option";
+                  control.appendChild(empty);
+                }
+                (field.options ?? []).forEach((option) => {
+                  const opt = document.createElement("option");
+                  opt.value = option.value;
+                  opt.textContent = option.label ?? option.value;
+                  control.appendChild(opt);
+                });
+                break;
+              }
+              case "date":
+              case "time":
+              case "number":
+              case "email":
+              case "tel":
+                control = document.createElement("input");
+                control.type = field.type;
+                control.name = field.id;
+                control.placeholder = field.placeholder ?? "";
+                break;
+              default: {
+                if (FILE_FIELD_TYPES.has(field.type)) {
+                  control = document.createElement("input");
+                  control.type = "file";
+                  control.name = field.id;
+                  if (field.multiple) control.multiple = true;
+                  if (Array.isArray(field.accepts) && field.accepts.length) {
+                    control.accept = field.accepts.join(",");
+                  } else if (field.type === "image-upload") {
+                    control.accept = "image/png,image/jpeg,image/webp";
+                  }
+                } else {
+                  control = document.createElement("input");
+                  control.type = "text";
+                  control.name = field.id;
+                  control.placeholder = field.placeholder ?? "";
+                }
+              }
+            }
+
+            if (control) {
+              if (field.required && control instanceof HTMLInputElement) control.required = true;
+              if (field.required && control instanceof HTMLSelectElement) control.required = true;
+              if (field.required && control instanceof HTMLTextAreaElement) control.required = true;
+              wrapper.appendChild(control);
+            }
+              if (FILE_FIELD_TYPES.has(field.type)) {
+                if (Array.isArray(field.accepts) && field.accepts.length) {
+                  const acceptMeta = document.createElement("span");
+                  acceptMeta.className = "meta";
+                  acceptMeta.textContent = `Allowed: ${field.accepts.join(", ")}`;
+                  wrapper.appendChild(acceptMeta);
+                }
+                if (field.multiple) {
+                  const multipleMeta = document.createElement("span");
+                  multipleMeta.className = "meta";
+                  multipleMeta.textContent =
+                    field.type === "image-upload" ? "Allows multiple images" : "Allows multiple files";
+                  wrapper.appendChild(multipleMeta);
+                }
+              }
+            formEl.appendChild(wrapper);
+          });
+
+          const submit = document.createElement("button");
+          submit.type = "submit";
+          submit.textContent = "Submit";
+          formEl.appendChild(submit);
+
+          formEl.addEventListener("submit", handleSubmit, { once: true });
+        }
+
+      async function handleSubmit(event) {
+        event.preventDefault();
+        const submitButton = formEl.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.textContent = "Submitting…";
+
+        const payload = {};
+        Array.from(formEl.elements).forEach((element) => {
+          if (!element.name) return;
+          if (element.type === "checkbox") {
+            payload[element.name] = payload[element.name] || [];
+            if (element.checked) {
+              payload[element.name].push(element.value);
+            }
+          } else if (element.type === "radio") {
+            if (element.checked) {
+              payload[element.name] = element.value;
+            }
+          } else if (element.type === "file") {
+            const files = Array.from(element.files ?? []).map((file) => ({
+              name: file.name,
+              size: file.size,
+              type: file.type
+            }));
+            payload[element.name] = files;
+          } else {
+            payload[element.name] = element.value;
+          }
+        });
+
+        try {
+          const res = await fetch(`${API_BASE}/forms/${shareKey}/submissions`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body.error ?? "Submission failed");
+          }
+          formEl.innerHTML = `<div class="alert success">Thank you! Your response has been recorded.</div>`;
+        } catch (error) {
+          console.error(error);
+          statusEl.hidden = false;
+          statusEl.className = "alert error";
+          statusEl.textContent = error.message || "Submission failed.";
+          submitButton.disabled = false;
+          submitButton.textContent = "Submit";
+          formEl.addEventListener("submit", handleSubmit, { once: true });
+        }
+      }
+
+      function hexToRgba(hex, alpha = 0.2) {
+        if (!hex?.startsWith("#")) return hex;
+        const parsed = hex.replace("#", "");
+        const bigint = parseInt(parsed, 16);
+        const r = (bigint >> 16) & 255;
+        const g = (bigint >> 8) & 255;
+        const b = bigint & 255;
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      }
+    </script>
+  </body>
+</html>
