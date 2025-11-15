@@ -50,3 +50,47 @@ export interface FormDetails {
   category: string;
   version: string;
 }
+
+export interface FormNotificationsSettings {
+  enabled: boolean;
+  recipients: string[];
+  subject: string;
+  message: string;
+}
+
+export interface FormBrandingSettings {
+  logoUrl?: string;
+}
+
+export interface FormSettings {
+  branding?: FormBrandingSettings;
+  notifications?: FormNotificationsSettings;
+  [key: string]: unknown;
+}
+
+export interface Form {
+  id: string;
+  name: string;
+  slug?: string;
+  description?: string;
+  fields: BuilderField[];
+  settings?: FormSettings;
+  visibility?: "public" | "private";
+  isPublished?: boolean;
+  shareUrl?: string;
+  submissionCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  version?: number;
+}
+
+export interface Submission {
+  id: string;
+  formId: string;
+  submittedAt: string;
+  data: Record<string, unknown>;
+}
+
+export interface ApiEnvelope<T> {
+  data: T;
+}

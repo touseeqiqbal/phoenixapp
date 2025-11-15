@@ -30,7 +30,8 @@ import type {
   BuilderField,
   FieldBlueprint,
   FieldCategory,
-  FormDetails
+  FormDetails,
+  Form
 } from "./types";
 import { createId } from "./utils/id";
 
@@ -63,6 +64,83 @@ function createFieldFromBlueprint(blueprint: FieldBlueprint): BuilderField {
 }
 
 const droppableContainerId = "canvas-dropzone";
+const API_BASE = "/api";
+const INITIAL_FORM_DETAILS: FormDetails = {
+  title: "",
+  description: "",
+  workspace: "",
+  category: "operations",
+  version: "v1.0.0"
+};
+
+async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const init: RequestInit = {
+    credentials: "include",
+    ...options
+  };
+
+  if (init.body && !(init.body instanceof FormData)) {
+    const headers = new Headers(init.headers ?? {});
+    if (!headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json");
+    }
+    init.headers = headers;
+  }
+
+  const response = await fetch(`${API_BASE}${path}`, init);
+  let payload: unknown = null;
+  try {
+    payload = await response.json();
+  } catch {
+    payload = null;
+  }
+
+  if (!response.ok) {
+    const message =
+      payload && typeof payload === "object" && payload !== null && "error" in payload
+        ? String((payload as { error: unknown }).error)
+        : response.statusText || "Request failed";
+    throw new Error(message);
+  }
+
+  if (payload && typeof payload === "object" && payload !== null && "data" in payload) {
+    return (payload as { data: T }).data;
+  }
+
+  return payload as T;
+}
+
+function normalizeApiField(field: Record<string, unknown>): BuilderField {
+  const rawOptions = Array.isArray((field as { options?: unknown[] }).options)
+    ? ((field as { options?: unknown[] }).options as unknown[])
+    : [];
+  const normalizedOptions = rawOptions.map((option, index) => {
+    if (typeof option === "string") return option;
+    if (option && typeof option === "object") {
+      const opt = option as { label?: string; value?: string };
+      return opt.label ?? opt.value ?? `Option ${index + 1}`;
+    }
+    return `Option ${index + 1}`;
+  });
+
+  return {
+    id: (field.id as string | undefined) ?? createId(),
+    type: (field.type as BuilderField["type"]) ?? "text",
+    label: (field.label as string | undefined) ?? "Untitled field",
+    placeholder: (field.placeholder as string | undefined) ?? "",
+    required: Boolean(field.required),
+    options: normalizedOptions
+  };
+}
+
+function normalizeForm(form: Form): Form {
+  return {
+    ...form,
+    visibility: form.visibility === "private" ? "private" : "public",
+    fields: Array.isArray(form.fields) ? form.fields.map(normalizeApiField) : [],
+    settings: form.settings ?? {}
+  };
+}
 
 function ToolboxPanel({ categories }: { categories: FieldCategory[] }) {
   return (
@@ -791,13 +869,81 @@ function App(): ReactNode {
   const [scripts, setScripts] = useState("");
   const [showPreview, setShowPreview] = useState(false);
   const [activeDrag, setActiveDrag] = useState<ActiveDragState>(null);
-  const [formDetails, setFormDetails] = useState<FormDetails>({
-    title: "",
-    description: "",
-    workspace: "",
-    category: "operations",
-    version: "v1.0.0"
-  });
+  const [formDetails, setFormDetails] = useState<FormDetails>({ ...INITIAL_FORM_DETAILS });
+  const [forms, setForms] = useState<Form[]>([]);
+  const [activeFormId, setActiveFormId] = useState<string | null>(null);
+  const [isLoadingForms, setIsLoadingForms] = useState<boolean>(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const activeForm = useMemo(
+    () => (activeFormId ? forms.find((form) => form.id === activeFormId) ?? null : null),
+    [forms, activeFormId]
+  );
+
+  const resetBuilderState = useCallback(() => {
+    setFields([]);
+    setSelectedFieldId(null);
+    setScripts("");
+    setFormDetails({ ...INITIAL_FORM_DETAILS });
+    setShowPreview(false);
+  }, []);
+
+  useEffect(() => {
+    let ignore = false;
+    const loadForms = async () => {
+      setIsLoadingForms(true);
+      setFormError(null);
+      try {
+        const response = await apiRequest<Form[]>("/forms?includeStats=true");
+        if (ignore) return;
+        const normalized = Array.isArray(response)
+          ? response.map((form) => normalizeForm(form))
+          : [];
+        setForms(normalized);
+        if (normalized.length) {
+          setActiveFormId((current) => current ?? normalized[0].id);
+        } else {
+          setActiveFormId(null);
+          resetBuilderState();
+        }
+      } catch (error) {
+        if (ignore) return;
+        setFormError(error instanceof Error ? error.message : "Unable to load forms.");
+      } finally {
+        if (!ignore) {
+          setIsLoadingForms(false);
+        }
+      }
+    };
+
+    loadForms();
+    return () => {
+      ignore = true;
+    };
+  }, [resetBuilderState]);
+
+  useEffect(() => {
+    if (activeForm) {
+      const hydratedFields = activeForm.fields?.map((field) => ({
+        ...field,
+        id: field.id ?? createId(),
+        options: Array.isArray(field.options) ? [...field.options] : []
+      })) ?? [];
+      setFields(hydratedFields);
+      setSelectedFieldId(null);
+      setScripts("");
+      setFormDetails({
+        title: activeForm.name ?? "",
+        description: activeForm.description ?? "",
+        workspace: "",
+        category: "operations",
+        version: activeForm.version ? `v${activeForm.version}` : "v1.0.0"
+      });
+      setShowPreview(false);
+    } else {
+      resetBuilderState();
+    }
+  }, [activeForm, resetBuilderState]);
 
   useEffect(() => {
     setShowPreview(false);
@@ -967,6 +1113,42 @@ function App(): ReactNode {
       </header>
 
       <main className="mx-auto max-w-6xl px-6 py-10 lg:px-10">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="text-sm text-slate-600">
+              Active form
+              <select
+                className="ml-2 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/30"
+                value={activeFormId ?? ""}
+                disabled={isLoadingForms || !forms.length}
+                onChange={(event) => {
+                  const nextId = event.target.value;
+                  setActiveFormId(nextId || null);
+                }}
+              >
+                <option value="">New form draft</option>
+                {forms.map((form) => (
+                  <option key={form.id} value={form.id}>
+                    {form.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              className="rounded-full border border-slate-300 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 hover:border-brand/40 hover:text-brand"
+              onClick={() => {
+                setActiveFormId(null);
+                resetBuilderState();
+              }}
+            >
+              Start new form
+            </button>
+          </div>
+          <div className="text-sm text-slate-500">
+            {isLoadingForms ? "Loading forms…" : formError ? formError : `${forms.length} form(s) available`}
+          </div>
+        </div>
         {activeTab === "build" ? (
           <DndContext
             sensors={sensors}
